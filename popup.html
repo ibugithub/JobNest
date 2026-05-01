@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JobNest</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>JobNest</h1>
+          <p id="summary">0 applications tracked</p>
+        </div>
+        <button id="exportBtn" class="icon-button" type="button" title="Export applications" aria-label="Export applications">
+          <span aria-hidden="true">JSON</span>
+        </button>
+      </header>
+
+      <section class="entry-panel" aria-labelledby="addJobTitle">
+        <h2 id="addJobTitle">Add application</h2>
+        <form id="jobForm" autocomplete="off">
+          <div class="field-grid">
+            <label>
+              Company
+              <input id="company" name="company" type="text" required placeholder="Acme Inc">
+            </label>
+            <label>
+              Role
+              <input id="role" name="role" type="text" required placeholder="Frontend Developer">
+            </label>
+          </div>
+
+          <label>
+            Job URL
+            <input id="url" name="url" type="url" placeholder="https://...">
+          </label>
+
+          <div class="field-grid">
+            <label>
+              Location
+              <input id="location" name="location" type="text" placeholder="Remote, Dhaka, etc.">
+            </label>
+            <label>
+              Status
+              <select id="status" name="status">
+                <option value="saved">Saved</option>
+                <option value="applied">Applied</option>
+                <option value="screening">Screening</option>
+                <option value="interview">Interview</option>
+                <option value="offer">Offer</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Date applied
+            <input id="appliedDate" name="appliedDate" type="date">
+          </label>
+
+          <label>
+            Notes
+            <textarea id="notes" name="notes" rows="3" placeholder="Recruiter name, salary, next step..."></textarea>
+          </label>
+
+          <button class="primary-button" type="submit">Save application</button>
+        </form>
+      </section>
+
+      <section class="list-panel" aria-labelledby="applicationsTitle">
+        <div class="list-header">
+          <h2 id="applicationsTitle">Applications</h2>
+          <select id="statusFilter" aria-label="Filter by status">
+            <option value="all">All</option>
+            <option value="saved">Saved</option>
+            <option value="applied">Applied</option>
+            <option value="screening">Screening</option>
+            <option value="interview">Interview</option>
+            <option value="offer">Offer</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+
+        <input id="search" class="search-input" type="search" placeholder="Search company or role">
+        <div id="jobList" class="job-list" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <template id="jobItemTemplate">
+      <article class="job-item">
+        <div class="job-main">
+          <h3></h3>
+          <p class="company-line"></p>
+          <p class="meta-line"></p>
+          <p class="notes-line"></p>
+        </div>
+        <div class="job-actions">
+          <select class="status-select" aria-label="Update status"></select>
+          <a class="open-link" target="_blank" rel="noreferrer">Open</a>
+          <button class="delete-button" type="button">Delete</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
