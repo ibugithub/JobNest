@@ -8,9 +8,9 @@ This first version is intentionally small:
 - Save a job application from the extension popup.
 - Auto-fill the job URL from the active browser tab.
 - Track company, role, location, status, date applied, notes, and source URL.
-- Search and filter saved applications.
-- Update status directly from the list.
-- Export your applications as JSON.
+- Open a dedicated tracker page for saved applications.
+- Search, filter, and update status from the tracker page.
+- Export your applications as JSON from the tracker page.
 - Store everything locally in your browser with `chrome.storage.local`.
 
 ## Load the extension in Chrome or Chromium
@@ -27,7 +27,11 @@ This first version is intentionally small:
 manifest.json       Extension metadata and permissions
 popup.html          Popup UI
 popup.css           Popup styling
-popup.js            Local job tracker behavior
+popup.js            Quick-add popup behavior
+storage.js          Shared local storage helpers
+tracker.html        Dedicated applications page
+tracker.css         Tracker page styling
+tracker.js          Tracker page list/filter/export behavior
 ```
 
 ## Next useful steps

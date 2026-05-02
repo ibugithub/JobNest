@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JobNest Tracker</title>
+    <link rel="stylesheet" href="tracker.css">
+  </head>
+  <body>
+    <main class="tracker-shell">
+      <header class="page-header">
+        <div>
+          <h1>Applications</h1>
+          <p id="summary">0 applications tracked</p>
+        </div>
+        <button id="exportBtn" class="secondary-button" type="button">Export JSON</button>
+      </header>
+
+      <section class="toolbar" aria-label="Application filters">
+        <input id="search" class="search-input" type="search" placeholder="Search company, role, or location">
+        <select id="statusFilter" aria-label="Filter by status">
+          <option value="all">All statuses</option>
+          <option value="saved">Saved</option>
+          <option value="applied">Applied</option>
+          <option value="screening">Screening</option>
+          <option value="interview">Interview</option>
+          <option value="offer">Offer</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </section>
+
+      <section class="applications-section" aria-labelledby="applicationsTitle">
+        <h2 id="applicationsTitle">Saved jobs</h2>
+        <div id="jobList" class="job-list" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <template id="jobItemTemplate">
+      <article class="job-item">
+        <div class="job-main">
+          <h3></h3>
+          <p class="company-line"></p>
+          <p class="meta-line"></p>
+          <p class="notes-line"></p>
+        </div>
+        <div class="job-actions">
+          <select class="status-select" aria-label="Update status"></select>
+          <a class="open-link" target="_blank" rel="noreferrer">Open job</a>
+          <button class="delete-button" type="button">Delete</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="storage.js"></script>
+    <script src="tracker.js"></script>
+  </body>
+</html>
