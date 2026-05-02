@@ -9,7 +9,8 @@ This first version is intentionally small:
 - Auto-fill the job URL from the active browser tab.
 - Track company, role, location, status, date applied, notes, and source URL.
 - Open a dedicated tracker page for saved applications.
-- Search, filter, and update status from the tracker page.
+- Search saved applications and review them in status sections on the tracker page.
+- Update status from an application card to move it between sections.
 - Export your applications as JSON from the tracker page.
 - Store everything locally in your browser with `chrome.storage.local`.
 

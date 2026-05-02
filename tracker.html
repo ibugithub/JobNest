@@ -18,27 +18,28 @@
 
       <section class="toolbar" aria-label="Application filters">
         <input id="search" class="search-input" type="search" placeholder="Search company, role, or location">
-        <select id="statusFilter" aria-label="Filter by status">
-          <option value="all">All statuses</option>
-          <option value="saved">Saved</option>
-          <option value="applied">Applied</option>
-          <option value="screening">Screening</option>
-          <option value="interview">Interview</option>
-          <option value="offer">Offer</option>
-          <option value="rejected">Rejected</option>
-        </select>
       </section>
 
       <section class="applications-section" aria-labelledby="applicationsTitle">
         <h2 id="applicationsTitle">Saved jobs</h2>
-        <div id="jobList" class="job-list" aria-live="polite"></div>
+        <div id="sectionsList" class="sections-list" aria-live="polite"></div>
       </section>
     </main>
+
+    <template id="statusSectionTemplate">
+      <section class="status-section">
+        <header class="status-header">
+          <h3></h3>
+          <span class="status-count"></span>
+        </header>
+        <div class="job-list"></div>
+      </section>
+    </template>
 
     <template id="jobItemTemplate">
       <article class="job-item">
         <div class="job-main">
-          <h3></h3>
+          <h4></h4>
           <p class="company-line"></p>
           <p class="meta-line"></p>
           <p class="notes-line"></p>
