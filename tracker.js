@@ -30,7 +30,7 @@ exportButton.addEventListener("click", () => {
 
 function renderApplications() {
   const searchTerm = searchInput.value.trim().toLowerCase();
-  console.log('the search term is', searchTerm);
+
   const visibleApplications = applications.filter((application) => {
     const searchableText = `${application.company} ${application.role} ${application.location}`.toLowerCase();
     return searchableText.includes(searchTerm);
@@ -38,7 +38,7 @@ function renderApplications() {
 
   summary.textContent = `${applications.length} ${applications.length === 1 ? "application" : "applications"} tracked`;
   sectionsList.replaceChildren();
-  console.log('the visible applications are', visibleApplications);
+
   if (visibleApplications.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
