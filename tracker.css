@@ -145,6 +145,13 @@ select:focus {
   border-radius: 8px;
   background: #fbfcff;
   min-height: 0;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.status-section.is-drop-target {
+  border-color: var(--accent);
+  background: #eef4ff;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22);
 }
 
 .status-header {
@@ -180,6 +187,7 @@ select:focus {
   padding: 12px;
   align-content: start;
   overflow-y: auto;
+  min-height: 100%;
 }
 
 .job-item {
@@ -190,6 +198,37 @@ select:focus {
   border: 1px solid #e6eaf2;
   border-radius: 8px;
   background: #ffffff;
+  cursor: grab;
+  user-select: none;
+  transition: opacity 160ms ease, transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.job-item:active {
+  cursor: grabbing;
+}
+
+.job-item.is-dragging {
+  border-color: var(--accent);
+  opacity: 0.9;
+  transform: rotate(1deg) scale(1.01);
+  box-shadow: 0 18px 36px rgba(16, 24, 40, 0.2);
+}
+
+.drag-placeholder {
+  border: 2px dashed rgba(37, 99, 235, 0.55);
+  border-radius: 8px;
+  background: rgba(37, 99, 235, 0.08);
+  animation: placeholder-pulse 900ms ease-in-out infinite alternate;
+}
+
+@keyframes placeholder-pulse {
+  from {
+    background: rgba(37, 99, 235, 0.06);
+  }
+
+  to {
+    background: rgba(37, 99, 235, 0.14);
+  }
 }
 
 .job-main {
@@ -221,10 +260,6 @@ select:focus {
   grid-template-columns: 1fr 1fr;
   align-items: center;
   gap: 8px;
-}
-
-.status-select {
-  grid-column: 1 / -1;
 }
 
 .open-link,
@@ -261,6 +296,10 @@ select:focus {
   padding: 14px 4px;
   color: var(--muted);
   text-align: center;
+}
+
+.status-section.is-drop-target .section-empty {
+  display: none;
 }
 
 @media (max-width: 720px) {

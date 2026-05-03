@@ -10,7 +10,7 @@ This first version is intentionally small:
 - Track company, role, location, status, date applied, notes, and source URL.
 - Open a dedicated tracker page for saved applications.
 - Search saved applications and review them in status sections on the tracker page.
-- Update status from an application card to move it between sections.
+- Drag application cards between sections to update status, or reorder cards inside a section.
 - Export your applications as JSON from the tracker page.
 - Store everything locally in your browser with `chrome.storage.local`.
 

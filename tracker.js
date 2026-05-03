@@ -6,6 +6,8 @@ const sectionTemplate = document.querySelector("#statusSectionTemplate");
 const jobTemplate = document.querySelector("#jobItemTemplate");
 
 let applications = [];
+let draggedApplicationId = "";
+let dragPlaceholder = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   applications = await loadApplications();
@@ -28,7 +30,7 @@ exportButton.addEventListener("click", () => {
 
 function renderApplications() {
   const searchTerm = searchInput.value.trim().toLowerCase();
-
+  console.log('the search term is', searchTerm);
   const visibleApplications = applications.filter((application) => {
     const searchableText = `${application.company} ${application.role} ${application.location}`.toLowerCase();
     return searchableText.includes(searchTerm);
@@ -36,7 +38,7 @@ function renderApplications() {
 
   summary.textContent = `${applications.length} ${applications.length === 1 ? "application" : "applications"} tracked`;
   sectionsList.replaceChildren();
-
+  console.log('the visible applications are', visibleApplications);
   if (visibleApplications.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
@@ -50,8 +52,11 @@ function renderApplications() {
     const section = sectionTemplate.content.firstElementChild.cloneNode(true);
     const sectionList = section.querySelector(".job-list");
 
+    section.dataset.status = status.value;
+    sectionList.dataset.status = status.value;
     section.querySelector("h3").textContent = status.label;
     section.querySelector(".status-count").textContent = String(sectionApplications.length);
+    setupDropTarget(sectionList, status.value);
 
     if (sectionApplications.length === 0) {
       const empty = document.createElement("p");
@@ -70,6 +75,8 @@ function renderApplications() {
 
 function createApplicationItem(application) {
   const item = jobTemplate.content.firstElementChild.cloneNode(true);
+  item.draggable = true;
+  item.dataset.applicationId = application.id;
   item.querySelector("h4").textContent = application.role;
   item.querySelector(".company-line").textContent = application.company;
   item.querySelector(".meta-line").textContent = buildMetaLine(application);
@@ -78,10 +85,21 @@ function createApplicationItem(application) {
   notesLine.textContent = application.notes;
   notesLine.hidden = !application.notes;
 
-  const statusSelect = item.querySelector(".status-select");
-  populateStatusSelect(statusSelect, getApplicationStatus(application));
-  statusSelect.addEventListener("change", async () => {
-    await updateApplication(application.id, { status: statusSelect.value });
+  item.addEventListener("dragstart", (event) => {
+    draggedApplicationId = application.id;
+    item.classList.add("is-dragging");
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", application.id);
+
+    dragPlaceholder = createDragPlaceholder(item);
+  });
+
+  item.addEventListener("dragend", () => {
+    draggedApplicationId = "";
+    dragPlaceholder?.remove();
+    dragPlaceholder = null;
+    item.classList.remove("is-dragging");
+    clearDropTargets();
   });
 
   const openLink = item.querySelector(".open-link");
@@ -98,17 +116,6 @@ function createApplicationItem(application) {
   return item;
 }
 
-function populateStatusSelect(select, currentStatus) {
-  select.replaceChildren();
-  for (const status of STATUSES) {
-    const option = document.createElement("option");
-    option.value = status.value;
-    option.textContent = status.label;
-    option.selected = status.value === currentStatus;
-    select.append(option);
-  }
-}
-
 function buildMetaLine(application) {
   const parts = [
     application.appliedDate ? `Applied ${application.appliedDate}` : "",
@@ -123,21 +130,131 @@ function getApplicationStatus(application) {
   return hasKnownStatus ? application.status : "saved";
 }
 
-async function updateApplication(id, changes) {
-  applications = applications.map((application) => {
-    if (application.id !== id) {
-      return application;
-    }
-
-    return {
-      ...application,
-      ...changes,
-      updatedAt: new Date().toISOString()
-    };
+function setupDropTarget(jobList, statusValue) {
+  jobList.addEventListener("dragenter", (event) => {
+    event.preventDefault();
+    jobList.closest(".status-section").classList.add("is-drop-target");
   });
 
+  jobList.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    jobList.closest(".status-section").classList.add("is-drop-target");
+
+    if (!dragPlaceholder) {
+      return;
+    }
+
+    const nextItem = getNextDropItem(jobList, event.clientY);
+    if (nextItem) {
+      jobList.insertBefore(dragPlaceholder, nextItem);
+    } else {
+      jobList.append(dragPlaceholder);
+    }
+  });
+
+  jobList.addEventListener("dragleave", (event) => {
+    if (!jobList.contains(event.relatedTarget)) {
+      jobList.closest(".status-section").classList.remove("is-drop-target");
+    }
+  });
+
+  jobList.addEventListener("drop", async (event) => {
+    event.preventDefault();
+    const applicationId = event.dataTransfer.getData("text/plain") || draggedApplicationId;
+    const nextApplicationId = getNextApplicationId(dragPlaceholder);
+
+    if (!applicationId) {
+      clearDropState();
+      return;
+    }
+
+    const application = applications.find((item) => item.id === applicationId);
+    if (!application) {
+      clearDropState();
+      return;
+    }
+
+    await moveApplication(applicationId, statusValue, nextApplicationId);
+    clearDropState();
+  });
+}
+
+function createDragPlaceholder(item) {
+  const placeholder = document.createElement("div");
+  placeholder.className = "drag-placeholder";
+  placeholder.style.height = `${item.offsetHeight}px`;
+  return placeholder;
+}
+
+function getNextDropItem(jobList, pointerY) {
+  const draggableItems = [...jobList.querySelectorAll(".job-item:not(.is-dragging)")];
+
+  return draggableItems.find((item) => {
+    const rect = item.getBoundingClientRect();
+    return pointerY < rect.top + rect.height / 2;
+  }) || null;
+}
+
+function getNextApplicationId(placeholder) {
+  let nextElement = placeholder?.nextElementSibling || null;
+
+  while (nextElement && !nextElement.matches(".job-item")) {
+    nextElement = nextElement.nextElementSibling;
+  }
+
+  return nextElement?.dataset.applicationId || "";
+}
+
+function clearDropState() {
+  dragPlaceholder?.remove();
+  dragPlaceholder = null;
+  clearDropTargets();
+}
+
+function clearDropTargets() {
+  document.querySelectorAll(".is-drop-target").forEach((section) => {
+    section.classList.remove("is-drop-target");
+  });
+}
+
+async function moveApplication(id, nextStatus, nextApplicationId) { 
+  const movedApplication = applications.find((application) => application.id === id);
+  if (!movedApplication) {
+    return;
+  }
+
+  const updatedApplication = {
+    ...movedApplication,
+    status: nextStatus,
+    updatedAt: new Date().toISOString()
+  };
+
+  const remainingApplications = applications.filter((application) => application.id !== id);
+  const targetIndex = nextApplicationId
+    ? remainingApplications.findIndex((application) => application.id === nextApplicationId)
+    : -1;
+
+  if (targetIndex >= 0) {
+    remainingApplications.splice(targetIndex, 0, updatedApplication);
+  } else {
+    const lastInTargetColumnIndex = findLastIndex(remainingApplications, (application) => getApplicationStatus(application) === nextStatus);
+    remainingApplications.splice(lastInTargetColumnIndex + 1, 0, updatedApplication);
+  }
+
+  applications = remainingApplications;
   await saveApplications(applications);
   renderApplications();
+}
+
+function findLastIndex(items, predicate) {
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    if (predicate(items[index])) {
+      return index;
+    }
+  }
+
+  return -1;
 }
 
 async function deleteApplication(id) {
