@@ -1,14 +1,16 @@
 :root {
   color-scheme: light;
-  --bg: #f5f7fb;
+  --bg: #f4f6f8;
   --panel: #ffffff;
-  --text: #172033;
-  --muted: #667085;
-  --line: #d9dee8;
+  --text: #111827;
+  --muted: #64748b;
+  --line: #d6dde8;
+  --line-soft: #e7ebf1;
   --accent: #2563eb;
   --accent-strong: #1d4ed8;
   --danger: #b42318;
-  --shadow: 0 12px 28px rgba(16, 24, 40, 0.12);
+  --shadow: 0 14px 32px rgba(15, 23, 42, 0.1);
+  --shadow-soft: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
 
 * {
@@ -23,6 +25,7 @@ body {
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 14px;
+  line-height: 1.45;
 }
 
 button,
@@ -34,7 +37,7 @@ textarea {
 
 .app-shell {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   padding: 16px;
 }
 
@@ -43,14 +46,15 @@ textarea {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px;
+  padding: 14px 15px;
+  border-top: 3px solid var(--accent);
 }
 
 h1,
@@ -63,11 +67,13 @@ p {
 h1 {
   font-size: 22px;
   line-height: 1.1;
+  font-weight: 850;
 }
 
 h2 {
-  font-size: 15px;
+  font-size: 14px;
   margin-bottom: 12px;
+  font-weight: 800;
 }
 
 #summary {
@@ -77,7 +83,7 @@ h2 {
 }
 
 .entry-panel {
-  padding: 14px;
+  padding: 15px;
 }
 
 form {
@@ -94,9 +100,9 @@ form {
 label {
   display: grid;
   gap: 5px;
-  color: #344054;
+  color: #334155;
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 750;
 }
 
 input,
@@ -108,6 +114,7 @@ textarea {
   background: #ffffff;
   color: var(--text);
   outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
 input,
@@ -135,6 +142,7 @@ textarea:focus {
   border: 0;
   cursor: pointer;
   font-weight: 700;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .primary-button {
@@ -142,18 +150,27 @@ textarea:focus {
   border-radius: 6px;
   background: var(--accent);
   color: #ffffff;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
 }
 
 .primary-button:hover {
   background: var(--accent-strong);
+  transform: translateY(-1px);
 }
 
 .icon-button {
-  width: 48px;
+  width: 58px;
   height: 38px;
   border-radius: 6px;
-  background: #eef4ff;
+  border: 1px solid #c7d7fe;
+  background: #ffffff;
   color: var(--accent);
   font-size: 12px;
   line-height: 1;
+}
+
+.icon-button:hover {
+  color: #ffffff;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
 }

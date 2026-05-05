@@ -1,14 +1,19 @@
 :root {
   color-scheme: light;
-  --bg: #f5f7fb;
+  --bg: #f4f6f8;
   --panel: #ffffff;
-  --text: #172033;
-  --muted: #667085;
-  --line: #d9dee8;
+  --panel-soft: #f8fafc;
+  --text: #111827;
+  --muted: #64748b;
+  --line: #d6dde8;
+  --line-soft: #e7ebf1;
   --accent: #2563eb;
   --accent-strong: #1d4ed8;
+  --success: #047857;
+  --warning: #b45309;
   --danger: #b42318;
-  --shadow: 0 12px 28px rgba(16, 24, 40, 0.12);
+  --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  --shadow-soft: 0 6px 18px rgba(15, 23, 42, 0.06);
 }
 
 * {
@@ -21,6 +26,7 @@ body {
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 14px;
+  line-height: 1.45;
 }
 
 button,
@@ -31,10 +37,10 @@ select {
 
 .tracker-shell {
   display: grid;
-  gap: 18px;
-  width: calc(100% - 32px);
+  gap: 16px;
+  width: calc(100% - 40px);
   margin: 0 auto;
-  padding: 28px 0;
+  padding: 24px 0;
 }
 
 .page-header,
@@ -43,7 +49,7 @@ select {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .page-header {
@@ -51,7 +57,8 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 20px;
+  padding: 18px 20px;
+  border-top: 3px solid var(--accent);
 }
 
 .header-actions {
@@ -64,7 +71,7 @@ select {
 
 .import-message {
   grid-column: 1 / -1;
-  color: #067647;
+  color: var(--success);
   font-size: 12px;
   font-weight: 700;
 }
@@ -78,13 +85,15 @@ p {
 }
 
 h1 {
-  font-size: 28px;
+  font-size: 26px;
   line-height: 1.1;
+  font-weight: 800;
 }
 
 h2 {
   font-size: 16px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  font-weight: 800;
 }
 
 #summary {
@@ -96,7 +105,7 @@ h2 {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
-  padding: 16px;
+  padding: 14px;
 }
 
 input,
@@ -109,6 +118,7 @@ select {
   color: var(--text);
   outline: none;
   padding: 0 12px;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
 input:focus,
@@ -122,12 +132,14 @@ select:focus {
   border: 0;
   cursor: pointer;
   font-weight: 700;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
 .secondary-button {
   height: 40px;
   border-radius: 6px;
-  background: #eef4ff;
+  border: 1px solid #c7d7fe;
+  background: #ffffff;
   color: var(--accent);
   padding: 0 14px;
 }
@@ -135,6 +147,8 @@ select:focus {
 .secondary-button:hover {
   color: #ffffff;
   background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
 }
 
 .visually-hidden {
@@ -148,7 +162,7 @@ select:focus {
 }
 
 .applications-section {
-  padding: 18px;
+  padding: 16px;
   overflow-x: auto;
 }
 
@@ -158,7 +172,7 @@ select:focus {
   grid-template-columns: repeat(6, minmax(var(--column-width), 1fr));
   gap: 16px;
   min-width: calc((var(--column-width) * 6) + (16px * 5));
-  height: calc(100vh - 240px);
+  height: calc(100vh - 230px);
   min-height: 520px;
   align-items: stretch;
 }
@@ -168,15 +182,40 @@ select:focus {
   grid-template-rows: auto minmax(0, 1fr);
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fbfcff;
+  background: var(--panel-soft);
   min-height: 0;
   transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+  overflow: hidden;
 }
 
 .status-section.is-drop-target {
   border-color: var(--accent);
-  background: #eef4ff;
+  background: #eff6ff;
   box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.22);
+}
+
+.status-section[data-status="saved"] {
+  border-top: 3px solid #64748b;
+}
+
+.status-section[data-status="applied"] {
+  border-top: 3px solid var(--accent);
+}
+
+.status-section[data-status="screening"] {
+  border-top: 3px solid #7c3aed;
+}
+
+.status-section[data-status="interview"] {
+  border-top: 3px solid var(--warning);
+}
+
+.status-section[data-status="offer"] {
+  border-top: 3px solid var(--success);
+}
+
+.status-section[data-status="rejected"] {
+  border-top: 3px solid var(--danger);
 }
 
 .status-header {
@@ -184,13 +223,15 @@ select:focus {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 13px 14px;
   border-bottom: 1px solid var(--line);
+  background: #ffffff;
 }
 
 .status-header h3 {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.2;
+  font-weight: 800;
 }
 
 .status-count {
@@ -200,7 +241,7 @@ select:focus {
   min-width: 28px;
   height: 24px;
   border-radius: 999px;
-  background: #eef4ff;
+  background: #eff6ff;
   color: var(--accent);
   font-size: 12px;
   font-weight: 800;
@@ -209,23 +250,32 @@ select:focus {
 .job-list {
   display: grid;
   gap: 10px;
-  padding: 12px;
+  padding: 10px;
   align-content: start;
   overflow-y: auto;
   min-height: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 .job-item {
   display: grid;
   gap: 12px;
   align-items: start;
-  padding: 16px;
-  border: 1px solid #e6eaf2;
+  padding: 14px;
+  border: 1px solid var(--line-soft);
   border-radius: 8px;
   background: #ffffff;
   cursor: grab;
   user-select: none;
   transition: opacity 160ms ease, transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.job-item:hover {
+  border-color: #c7d2fe;
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
 }
 
 .job-item:active {
@@ -267,8 +317,9 @@ select:focus {
 .job-main h4 {
   margin: 0;
   overflow-wrap: anywhere;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1.25;
+  font-weight: 800;
 }
 
 .company-line,
@@ -277,7 +328,8 @@ select:focus {
   margin-top: 6px;
   color: var(--muted);
   overflow-wrap: anywhere;
-  line-height: 1.4;
+  line-height: 1.35;
+  font-size: 13px;
 }
 
 .notes-line {
@@ -297,7 +349,7 @@ select:focus {
   align-items: center;
   justify-content: center;
   min-width: 78px;
-  height: 40px;
+  height: 36px;
   border-radius: 6px;
   text-decoration: none;
   font-size: 13px;
@@ -308,11 +360,21 @@ select:focus {
   border: 1px solid var(--line);
   color: var(--accent);
   background: #ffffff;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.open-link:hover {
+  border-color: #c7d7fe;
+  background: #eff6ff;
 }
 
 .delete-button {
   color: var(--danger);
   background: #fff1f0;
+}
+
+.delete-button:hover {
+  background: #fee4e2;
 }
 
 .empty-state {
@@ -325,6 +387,7 @@ select:focus {
   padding: 14px 4px;
   color: var(--muted);
   text-align: center;
+  font-size: 13px;
 }
 
 .status-section.is-drop-target .section-empty {
