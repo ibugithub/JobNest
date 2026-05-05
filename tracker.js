@@ -92,6 +92,9 @@ function createApplicationItem(application) {
     event.dataTransfer.setData("text/plain", application.id);
 
     dragPlaceholder = createDragPlaceholder(item);
+    requestAnimationFrame(() => {
+      item.classList.add("is-hidden-during-drag");
+    });
   });
 
   item.addEventListener("dragend", () => {
@@ -99,6 +102,7 @@ function createApplicationItem(application) {
     dragPlaceholder?.remove();
     dragPlaceholder = null;
     item.classList.remove("is-dragging");
+    item.classList.remove("is-hidden-during-drag");
     clearDropTargets();
   });
 
