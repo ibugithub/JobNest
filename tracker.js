@@ -144,6 +144,7 @@ function setupDropTarget(jobList, statusValue) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
     jobList.closest(".status-section").classList.add("is-drop-target");
+    scrollJobListDuringDrag(jobList, event.clientY);
 
     if (!dragPlaceholder) {
       return;
@@ -198,6 +199,25 @@ function getNextDropItem(jobList, pointerY) {
     const rect = item.getBoundingClientRect();
     return pointerY < rect.top + rect.height / 2;
   }) || null;
+}
+
+function scrollJobListDuringDrag(jobList, pointerY) {
+  const rect = jobList.getBoundingClientRect();
+  const edgeSize = 72;
+  const maxScrollStep = 35;
+
+  if (pointerY < rect.top + edgeSize) {
+    const distanceFromTopEdge = Math.max(pointerY - rect.top, 0);
+    const scrollRatio = 1 - distanceFromTopEdge / edgeSize;
+    jobList.scrollTop -= Math.ceil(scrollRatio * maxScrollStep);
+    return;
+  }
+
+  if (pointerY > rect.bottom - edgeSize) {
+    const distanceFromBottomEdge = Math.max(rect.bottom - pointerY, 0);
+    const scrollRatio = 1 - distanceFromBottomEdge / edgeSize;
+    jobList.scrollTop += Math.ceil(scrollRatio * maxScrollStep);
+  }
 }
 
 function getNextApplicationId(placeholder) {
