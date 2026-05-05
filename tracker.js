@@ -1,6 +1,9 @@
 const sectionsList = document.querySelector("#sectionsList");
 const summary = document.querySelector("#summary");
 const searchInput = document.querySelector("#search");
+const importButton = document.querySelector("#importBtn");
+const importInput = document.querySelector("#importInput");
+const importMessage = document.querySelector("#importMessage");
 const exportButton = document.querySelector("#exportBtn");
 const sectionTemplate = document.querySelector("#statusSectionTemplate");
 const jobTemplate = document.querySelector("#jobItemTemplate");
@@ -16,6 +19,29 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 searchInput.addEventListener("input", renderApplications);
 
+importButton.addEventListener("click", () => {
+  importInput.click();
+});
+
+importInput.addEventListener("change", async () => {
+  const [file] = importInput.files;
+  importInput.value = "";
+
+  if (!file) {
+    return;
+  }
+
+  try {
+    const importedApplications = await readApplicationsBackup(file);
+    applications = importedApplications;
+    await saveApplications(applications);
+    renderApplications();
+    showImportMessage(`${applications.length} ${applications.length === 1 ? "application" : "applications"} restored from backup.`);
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
 exportButton.addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(applications, null, 2)], {
     type: "application/json"
@@ -27,6 +53,51 @@ exportButton.addEventListener("click", () => {
   anchor.click();
   URL.revokeObjectURL(url);
 });
+
+async function readApplicationsBackup(file) {
+  const text = await file.text();
+  const parsed = JSON.parse(text);
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Import failed. Please choose a JobNest JSON export file.");
+  }
+
+  return parsed.map(normalizeImportedApplication);
+}
+
+function normalizeImportedApplication(application) {
+  if (!application || typeof application !== "object") {
+    throw new Error("Import failed. Every application must be an object.");
+  }
+
+  return {
+    id: clean(application.id) || crypto.randomUUID(),
+    company: clean(application.company),
+    role: clean(application.role),
+    url: clean(application.url),
+    location: clean(application.location),
+    status: normalizeImportedStatus(application.status),
+    appliedDate: clean(application.appliedDate),
+    notes: clean(application.notes),
+    createdAt: clean(application.createdAt) || new Date().toISOString(),
+    updatedAt: clean(application.updatedAt) || new Date().toISOString()
+  };
+}
+
+function normalizeImportedStatus(status) {
+  const statusValue = clean(status);
+  return STATUSES.some((item) => item.value === statusValue) ? statusValue : "saved";
+}
+
+function showImportMessage(message) {
+  importMessage.textContent = message;
+
+  window.setTimeout(() => {
+    if (importMessage.textContent === message) {
+      importMessage.textContent = "";
+    }
+  }, 4500);
+}
 
 function renderApplications() {
   const searchTerm = searchInput.value.trim().toLowerCase();

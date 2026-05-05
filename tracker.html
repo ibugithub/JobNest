@@ -13,7 +13,12 @@
           <h1>Applications</h1>
           <p id="summary">0 applications tracked</p>
         </div>
-        <button id="exportBtn" class="secondary-button" type="button">Export JSON</button>
+        <div class="header-actions">
+          <button id="importBtn" class="secondary-button" type="button">Restore Backup</button>
+          <button id="exportBtn" class="secondary-button" type="button">Download Backup</button>
+          <input id="importInput" class="visually-hidden" type="file" accept="application/json,.json">
+          <p id="importMessage" class="import-message" aria-live="polite"></p>
+        </div>
       </header>
 
       <section class="toolbar" aria-label="Application filters">

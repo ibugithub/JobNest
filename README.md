@@ -11,7 +11,7 @@ This first version is intentionally small:
 - Open a dedicated tracker page for saved applications.
 - Search saved applications and review them in status sections on the tracker page.
 - Drag application cards between sections to update status, or reorder cards inside a section.
-- Export your applications as JSON from the tracker page.
+- Export and import your applications as JSON from the tracker page.
 - Store everything locally in your browser with `chrome.storage.local`.
 
 ## Load the extension in Chrome or Chromium
