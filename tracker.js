@@ -132,6 +132,7 @@ function createApplicationItem(application) {
   const item = jobTemplate.content.firstElementChild.cloneNode(true);
   item.draggable = true;
   item.dataset.applicationId = application.id;
+  item.title = application.role;
   item.querySelector("h4").textContent = application.role;
   item.querySelector(".company-line").textContent = application.company;
   item.querySelector(".meta-line").textContent = buildMetaLine(application);
