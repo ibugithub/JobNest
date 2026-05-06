@@ -1,6 +1,7 @@
 const sectionsList = document.querySelector("#sectionsList");
 const summary = document.querySelector("#summary");
 const searchInput = document.querySelector("#search");
+const statsButton = document.querySelector("#statsBtn");
 const importButton = document.querySelector("#importBtn");
 const importMessage = document.querySelector("#importMessage");
 const backupLocationButton = document.querySelector("#backupLocationBtn");
@@ -30,10 +31,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   await updateBackupGate();
   updateRestoreButtons();
   await showSetupMessageFromUrl();
+  applyCompanyFilterFromUrl();
   renderApplications();
 });
 
 searchInput.addEventListener("input", renderApplications);
+
+statsButton.addEventListener("click", () => {
+  window.location.href = chrome.runtime.getURL("stats.html");
+});
 
 importButton.addEventListener("click", () => {
   restoreApplicationsFromConnectedBackup();
@@ -164,6 +170,20 @@ async function showSetupMessageFromUrl() {
 function clearSetupMessageFromUrl() {
   const url = new URL(window.location.href);
   url.searchParams.delete("setup");
+  window.history.replaceState({}, "", url);
+}
+
+function applyCompanyFilterFromUrl() {
+  const company = new URLSearchParams(window.location.search).get("company");
+  if (!company) {
+    return;
+  }
+
+  searchInput.value = company;
+  showImportMessage(`Showing applications for ${company}.`);
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete("company");
   window.history.replaceState({}, "", url);
 }
 

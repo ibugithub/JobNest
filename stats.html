@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JobNest Statistics</title>
+    <link rel="stylesheet" href="tracker.css">
+    <link rel="stylesheet" href="stats.css">
+  </head>
+  <body>
+    <main class="tracker-shell stats-shell">
+      <header class="page-header">
+        <div>
+          <h1>Statistics</h1>
+          <p id="summary">0 applications tracked</p>
+        </div>
+        <div class="header-actions stats-actions">
+          <button id="trackerBtn" class="secondary-button" type="button">View Jobs</button>
+        </div>
+      </header>
+
+      <section class="stats-grid" aria-label="Application overview">
+        <article class="stat-card">
+          <span>Total applications</span>
+          <strong id="totalApplications">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Applied jobs</span>
+          <strong id="appliedApplications">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Interviews</span>
+          <strong id="interviewApplications">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Offers</span>
+          <strong id="offerApplications">0</strong>
+        </article>
+      </section>
+
+      <section class="time-section">
+        <div class="panel-title-row">
+          <h2>Applications Over Time</h2>
+          <div class="segmented-control" aria-label="Time range">
+            <button class="segment-button is-active" type="button" data-range="daily">Daily</button>
+            <button class="segment-button" type="button" data-range="weekly">Weekly</button>
+            <button class="segment-button" type="button" data-range="monthly">Monthly</button>
+            <button class="segment-button" type="button" data-range="yearly">Yearly</button>
+          </div>
+        </div>
+        <div class="time-layout">
+          <article class="stats-panel graph-panel">
+            <div class="graph-card">
+              <canvas id="trendGraph" aria-label="Applications over time graph"></canvas>
+            </div>
+          </article>
+          <article class="stats-panel time-list-panel">
+            <div id="timeChart" class="bar-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="stats-columns">
+        <article class="stats-panel companies-panel">
+          <h2>Companies</h2>
+          <div id="companyList" class="ranked-list"></div>
+        </article>
+        <article class="stats-panel company-jobs-panel">
+          <h2 id="selectedCompanyTitle">Company Applications</h2>
+          <div id="companyApplications" class="company-applications"></div>
+        </article>
+      </section>
+    </main>
+
+    <script src="storage.js"></script>
+    <script src="stats.js"></script>
+  </body>
+</html>

@@ -1,0 +1,283 @@
+.stats-shell {
+  gap: 18px;
+}
+
+.stats-actions {
+  grid-template-columns: auto;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.stat-card,
+.stats-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.stat-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.stat-card span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stat-card strong {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.stats-panel {
+  padding: 16px;
+}
+
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.segmented-control {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.segment-button {
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.segment-button.is-active {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.18);
+}
+
+.stats-columns {
+  display: grid;
+  grid-template-columns: minmax(260px, 420px) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.companies-panel,
+.company-jobs-panel {
+  min-height: 360px;
+}
+
+.companies-panel .ranked-list,
+.company-applications {
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.time-section {
+  display: grid;
+  gap: 12px;
+}
+
+.time-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.graph-panel,
+.time-list-panel {
+  min-width: 0;
+}
+
+.graph-card {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(37, 99, 235, 0.10), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+#trendGraph {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.bar-list,
+.ranked-list {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.time-list-panel h2 {
+  margin-bottom: 14px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(96px, 150px) 1fr 42px;
+  align-items: center;
+  gap: 10px;
+}
+
+.time-list-panel .bar-row {
+  grid-template-columns: minmax(64px, 92px) minmax(0, 1fr) 32px;
+  gap: 8px;
+}
+
+.bar-label,
+.bar-value,
+.rank-count {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.bar-track {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8eef6;
+}
+
+.bar-fill {
+  width: var(--bar-width);
+  min-width: 3px;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2563eb, #14b8a6);
+}
+
+.rank-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.rank-row:last-child {
+  border-bottom: 0;
+}
+
+.rank-row:hover,
+.rank-row.is-selected {
+  color: var(--accent);
+}
+
+.rank-row.is-selected .rank-count {
+  color: var(--accent);
+}
+
+.rank-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 800;
+}
+
+.empty-stats {
+  color: var(--muted);
+  font-weight: 700;
+  padding: 8px 0;
+}
+
+.company-applications {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.company-job {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.company-job h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.company-job p {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.company-job button {
+  width: fit-content;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0;
+  text-decoration: none;
+}
+
+@media (max-width: 960px) {
+  .stats-grid,
+  .stats-columns,
+  .time-layout {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+@media (max-width: 640px) {
+  .stats-grid,
+  .stats-columns,
+  .time-layout,
+  .panel-title-row {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-title-row {
+    display: grid;
+    align-items: stretch;
+  }
+
+  .bar-row {
+    grid-template-columns: 82px 1fr 34px;
+  }
+}

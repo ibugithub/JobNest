@@ -62,7 +62,7 @@ select {
 
 .header-actions {
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: repeat(3, auto);
   gap: 10px;
   align-items: center;
   justify-items: end;
