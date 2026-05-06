@@ -16,10 +16,20 @@
         <div class="header-actions">
           <button id="importBtn" class="secondary-button" type="button">Restore Backup</button>
           <button id="backupLocationBtn" class="secondary-button" type="button">Choose Backup File</button>
-          <input id="importInput" class="visually-hidden" type="file" accept="application/json,.json">
           <p id="importMessage" class="import-message" aria-live="polite"></p>
         </div>
       </header>
+
+      <section id="backupGate" class="backup-gate" aria-labelledby="backupGateTitle" hidden>
+        <div>
+          <h2 id="backupGateTitle">Connect a backup file to continue</h2>
+          <p>JobNest needs a backup JSON file before you manage applications. If browser storage was cleared, restore your previous backup after connecting a backup file.</p>
+        </div>
+        <div class="backup-gate-actions">
+          <button id="gateBackupBtn" class="secondary-button" type="button">Choose Backup File</button>
+          <button id="gateRestoreBtn" class="secondary-button" type="button">Restore Backup</button>
+        </div>
+      </section>
 
       <section class="applications-section" aria-labelledby="applicationsTitle">
         <div class="applications-header">

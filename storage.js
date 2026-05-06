@@ -3,6 +3,7 @@ const DRAFT_STORAGE_KEY = "jobnest.popupDraft";
 const BACKUP_DB_NAME = "jobnest.backup";
 const BACKUP_STORE_NAME = "backup";
 const BACKUP_HANDLE_KEY = "backupFileHandle";
+const MISSING_BACKUP_FILE_MESSAGE = "Backup file was deleted. Choose Backup File again.";
 
 const STATUSES = [
   { value: "saved", label: "Saved" },
@@ -80,10 +81,61 @@ async function writeApplicationsBackup(nextApplications, options = {}) {
     return false;
   }
 
-  const writable = await handle.createWritable();
-  await writable.write(JSON.stringify(nextApplications, null, 2));
-  await writable.close();
-  return true;
+  try {
+    const writable = await handle.createWritable();
+    await writable.write(JSON.stringify(nextApplications, null, 2));
+    await writable.close();
+    return true;
+  } catch (error) {
+    if (isMissingBackupFileError(error)) {
+      await clearBackupFileHandle();
+      throw createMissingBackupFileError();
+    }
+
+    throw error;
+  }
+}
+
+async function readConnectedBackupFile(options = {}) {
+  const handle = await getBackupFileHandle();
+  if (!handle) {
+    throw new Error("Choose Backup File before restoring applications.");
+  }
+
+  const hasPermission = await verifyBackupPermission(handle, Boolean(options.requestPermission));
+  if (!hasPermission) {
+    throw new Error("Backup file permission was not granted.");
+  }
+
+  try {
+    return await handle.getFile();
+  } catch (error) {
+    if (isMissingBackupFileError(error)) {
+      await clearBackupFileHandle();
+      throw createMissingBackupFileError();
+    }
+
+    throw error;
+  }
+}
+
+async function verifyBackupFileStillExists() {
+  const handle = await getBackupFileHandle();
+  if (!handle) {
+    return null;
+  }
+
+  try {
+    await handle.getFile();
+    return handle;
+  } catch (error) {
+    if (isMissingBackupFileError(error)) {
+      await clearBackupFileHandle();
+      throw createMissingBackupFileError();
+    }
+
+    return handle;
+  }
 }
 
 async function getBackupFileHandle() {
@@ -106,6 +158,19 @@ async function storeBackupFileHandle(handle) {
     const transaction = db.transaction(BACKUP_STORE_NAME, "readwrite");
     const store = transaction.objectStore(BACKUP_STORE_NAME);
     const request = store.put(handle, BACKUP_HANDLE_KEY);
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function clearBackupFileHandle() {
+  const db = await openBackupDB();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(BACKUP_STORE_NAME, "readwrite");
+    const store = transaction.objectStore(BACKUP_STORE_NAME);
+    const request = store.delete(BACKUP_HANDLE_KEY);
 
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
@@ -136,6 +201,18 @@ async function verifyBackupPermission(handle, requestAccess) {
   }
 
   return (await handle.requestPermission(options)) === "granted";
+}
+
+function createMissingBackupFileError() {
+  const error = new Error(MISSING_BACKUP_FILE_MESSAGE);
+  error.name = "MissingBackupFileError";
+  return error;
+}
+
+function isMissingBackupFileError(error) {
+  return error?.name === "NotFoundError"
+    || error?.name === "MissingBackupFileError"
+    || /file.*(deleted|missing|not found|not exist)/i.test(String(error?.message || ""));
 }
 
 function statusLabel(value) {

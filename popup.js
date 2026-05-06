@@ -22,6 +22,22 @@ form.addEventListener("change", () => {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
+  try {
+    if (!await verifyBackupFileStillExists()) {
+      await redirectToBackupSetup("backupRequired");
+      return;
+    }
+  } catch (error) {
+    if (isMissingBackupFileError(error)) {
+      await redirectToBackupSetup("backupMissing");
+      return;
+    }
+
+    console.warn("Backup file check failed", error);
+    await redirectToBackupSetup("backupRequired");
+    return;
+  }
+
   const formData = new FormData(form);
   const status = formData.get("status") || "saved";
   const statusDate = formData.get("appliedDate") || todayDateString();
@@ -44,12 +60,21 @@ form.addEventListener("submit", async (event) => {
 
   applications = [application, ...applications];
   await saveApplications(applications);
-  await clearPopupDraft();
+
   try {
-    await writeApplicationsBackup(applications);
+    const didWrite = await writeApplicationsBackup(applications);
+    if (!didWrite) {
+      throw new Error("Backup file not updated. Choose Backup File again.");
+    }
   } catch (error) {
     console.warn("Backup write failed", error);
+    applications = applications.filter((item) => item.id !== application.id);
+    await saveApplications(applications);
+    showSaveMessage(isMissingBackupFileError(error) ? MISSING_BACKUP_FILE_MESSAGE : "Backup file not updated. Choose Backup File again.");
+    return;
   }
+
+  await clearPopupDraft();
   form.reset();
   setDefaultAppliedDate();
   await prefillFromActiveTab();
@@ -61,6 +86,14 @@ openTrackerButton.addEventListener("click", () => {
     url: chrome.runtime.getURL("tracker.html")
   });
 });
+
+async function redirectToBackupSetup(reason) {
+  showSaveMessage("Select a backup file before saving jobs.");
+  await chrome.tabs.create({
+    url: chrome.runtime.getURL(`tracker.html?setup=${reason}`)
+  });
+  window.close();
+}
 
 async function prefillFromActiveTab() {
   const urlInput = document.querySelector("#url");
@@ -122,6 +155,8 @@ function showSaveMessage(message) {
   saveMessage.textContent = message;
 
   window.setTimeout(() => {
-    window.close();
-  }, 700);
+    if (message === "Application saved.") {
+      window.close();
+    }
+  }, 900);
 }

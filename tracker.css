@@ -75,6 +75,37 @@ select {
   font-weight: 700;
 }
 
+.backup-gate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  box-shadow: var(--shadow-soft);
+}
+
+.backup-gate[hidden] {
+  display: none;
+}
+
+.backup-gate h2 {
+  margin-bottom: 6px;
+}
+
+.backup-gate p {
+  max-width: 720px;
+  color: #475569;
+}
+
+.backup-gate-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 10px;
+}
+
 h1,
 h2,
 h3,
@@ -142,6 +173,14 @@ select:focus {
   box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
 }
 
+.secondary-button:disabled {
+  cursor: default;
+  color: #475569;
+  background: #f8fafc;
+  border-color: var(--line);
+  box-shadow: none;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -155,6 +194,12 @@ select:focus {
 .applications-section {
   padding: 16px;
   overflow-x: auto;
+}
+
+.applications-section.is-disabled {
+  opacity: 0.48;
+  pointer-events: none;
+  user-select: none;
 }
 
 .applications-header {
@@ -447,6 +492,7 @@ select:focus {
 
 @media (max-width: 720px) {
   .page-header,
+  .backup-gate,
   .applications-header {
     grid-template-columns: 1fr;
   }
@@ -458,5 +504,14 @@ select:focus {
   .header-actions {
     grid-template-columns: 1fr;
     justify-items: stretch;
+  }
+
+  .backup-gate {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .backup-gate-actions {
+    flex-direction: column;
   }
 }

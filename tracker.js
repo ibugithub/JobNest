@@ -2,9 +2,12 @@ const sectionsList = document.querySelector("#sectionsList");
 const summary = document.querySelector("#summary");
 const searchInput = document.querySelector("#search");
 const importButton = document.querySelector("#importBtn");
-const importInput = document.querySelector("#importInput");
 const importMessage = document.querySelector("#importMessage");
 const backupLocationButton = document.querySelector("#backupLocationBtn");
+const backupGate = document.querySelector("#backupGate");
+const gateBackupButton = document.querySelector("#gateBackupBtn");
+const gateRestoreButton = document.querySelector("#gateRestoreBtn");
+const applicationsSection = document.querySelector(".applications-section");
 const sectionTemplate = document.querySelector("#statusSectionTemplate");
 const jobTemplate = document.querySelector("#jobItemTemplate");
 
@@ -14,55 +17,149 @@ let dragPlaceholder = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   applications = await loadApplications();
+  try {
+    await verifyBackupFileStillExists();
+  } catch (error) {
+    if (isMissingBackupFileError(error)) {
+      showImportMessage(MISSING_BACKUP_FILE_MESSAGE);
+    } else {
+      console.warn("Backup file check failed", error);
+    }
+  }
   await updateBackupButtonLabel();
+  await updateBackupGate();
+  updateRestoreButtons();
+  await showSetupMessageFromUrl();
   renderApplications();
 });
 
 searchInput.addEventListener("input", renderApplications);
 
 importButton.addEventListener("click", () => {
-  importInput.click();
+  restoreApplicationsFromConnectedBackup();
 });
 
-importInput.addEventListener("change", async () => {
-  const [file] = importInput.files;
-  importInput.value = "";
+gateRestoreButton.addEventListener("click", () => {
+  restoreApplicationsFromConnectedBackup();
+});
 
-  if (!file) {
+async function restoreApplicationsFromConnectedBackup() {
+  if (applications.length > 0) {
+    showImportMessage("Restore is available only when there are no saved applications.");
     return;
   }
 
   try {
+    const file = await readConnectedBackupFile({ requestPermission: true });
     const importedApplications = await readApplicationsBackup(file);
     applications = importedApplications;
     await saveApplications(applications);
-    await writeBackupWithStatus("Backup updated after restore.", true);
+    updateRestoreButtons();
     renderApplications();
     showImportMessage(`${applications.length} ${applications.length === 1 ? "application" : "applications"} restored from backup.`);
   } catch (error) {
-    alert(error.message);
+    if (isMissingBackupFileError(error)) {
+      showBackupDisconnectedState(MISSING_BACKUP_FILE_MESSAGE);
+      return;
+    }
+
+    showImportMessage(error.message);
   }
-});
+}
 
 backupLocationButton.addEventListener("click", async () => {
+  await connectBackupFile();
+});
+
+gateBackupButton.addEventListener("click", async () => {
+  await connectBackupFile();
+});
+
+async function connectBackupFile() {
   try {
     const handle = await chooseBackupFile();
-    updateBackupButtonLabel(handle);
+    await updateBackupButtonLabel(handle);
+    await updateBackupGate(handle);
+
+    if (applications.length === 0) {
+      showImportMessage("Backup file connected. Use Restore Backup if you need to load saved applications.");
+      return;
+    }
+
     await writeBackupWithStatus("Backup file connected and updated.", true);
   } catch (error) {
     if (error.name !== "AbortError") {
       alert(error.message);
     }
   }
-});
+}
 
 async function updateBackupButtonLabel(handle) {
   const backupHandle = handle || await getBackupFileHandle();
 
   backupLocationButton.textContent = backupHandle ? `Backup: ${backupHandle.name}` : "Choose Backup File";
+  backupLocationButton.disabled = Boolean(backupHandle);
   backupLocationButton.title = backupHandle
     ? `Backup file: ${backupHandle.name}`
     : "Choose backup file";
+}
+
+async function updateBackupGate(handle) {
+  const backupHandle = handle || await getBackupFileHandle();
+  const needsBackup = !backupHandle;
+
+  backupGate.hidden = !needsBackup;
+  applicationsSection.classList.toggle("is-disabled", needsBackup);
+  searchInput.disabled = needsBackup;
+}
+
+function showBackupDisconnectedState(message) {
+  backupLocationButton.textContent = "Choose Backup File";
+  backupLocationButton.disabled = false;
+  backupLocationButton.title = "Choose backup file";
+  backupGate.hidden = false;
+  applicationsSection.classList.add("is-disabled");
+  searchInput.disabled = true;
+  showImportMessage(message);
+}
+
+function updateRestoreButtons() {
+  const canRestore = applications.length === 0;
+  importButton.disabled = !canRestore;
+  gateRestoreButton.disabled = !canRestore;
+  importButton.title = canRestore
+    ? "Restore applications from a backup file"
+    : "Restore is available only when there are no saved applications.";
+  gateRestoreButton.title = importButton.title;
+}
+
+async function showSetupMessageFromUrl() {
+  const setupReason = new URLSearchParams(window.location.search).get("setup");
+  if (!setupReason) {
+    return;
+  }
+
+  const backupHandle = await getBackupFileHandle();
+  clearSetupMessageFromUrl();
+
+  if (backupHandle) {
+    return;
+  }
+
+  if (setupReason === "backupMissing") {
+    showBackupDisconnectedState(MISSING_BACKUP_FILE_MESSAGE);
+    return;
+  }
+
+  if (setupReason === "backupRequired") {
+    showBackupDisconnectedState("Choose a backup file before saving jobs from the popup.");
+  }
+}
+
+function clearSetupMessageFromUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("setup");
+  window.history.replaceState({}, "", url);
 }
 
 async function readApplicationsBackup(file) {
@@ -108,13 +205,14 @@ async function writeBackupWithStatus(successMessage, requestPermission = false) 
     }
 
     if (!didWrite) {
-      showImportMessage("Backup file not updated. Choose Backup File again.");
+      await clearBackupFileHandle();
+      showBackupDisconnectedState("Backup file not updated. Choose Backup File again.");
     }
 
     return didWrite;
   } catch (error) {
     console.warn("Backup write failed", error);
-    showImportMessage("Backup file not updated. Choose Backup File again.");
+    showBackupDisconnectedState(isMissingBackupFileError(error) ? MISSING_BACKUP_FILE_MESSAGE : "Backup file not updated. Choose Backup File again.");
     return false;
   }
 }
@@ -133,7 +231,9 @@ function renderApplications() {
   if (visibleApplications.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
-    empty.textContent = applications.length === 0 ? "No applications saved yet. Use the popup to add your first job." : "No applications match this view.";
+    empty.textContent = applications.length === 0
+      ? "No applications found in browser storage. Use Restore Backup to load your saved backup, or use the popup to add your first job."
+      : "No applications match this view.";
     sectionsList.append(empty);
     return;
   }
@@ -367,6 +467,7 @@ async function moveApplication(id, nextStatus, nextApplicationId) {
 
   applications = remainingApplications;
   await saveApplications(applications);
+  updateRestoreButtons();
   await writeBackupWithStatus();
   renderApplications();
 }
@@ -405,6 +506,7 @@ function findLastIndex(items, predicate) {
 async function deleteApplication(id) {
   applications = applications.filter((application) => application.id !== id);
   await saveApplications(applications);
+  updateRestoreButtons();
   await writeBackupWithStatus();
   renderApplications();
 }
