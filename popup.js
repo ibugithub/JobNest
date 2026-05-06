@@ -35,6 +35,11 @@ form.addEventListener("submit", async (event) => {
 
   applications = [application, ...applications];
   await saveApplications(applications);
+  try {
+    await writeApplicationsBackup(applications);
+  } catch (error) {
+    console.warn("Backup write failed", error);
+  }
   form.reset();
   setDefaultAppliedDate();
   await prefillFromActiveTab();

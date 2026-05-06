@@ -4,7 +4,7 @@ const searchInput = document.querySelector("#search");
 const importButton = document.querySelector("#importBtn");
 const importInput = document.querySelector("#importInput");
 const importMessage = document.querySelector("#importMessage");
-const exportButton = document.querySelector("#exportBtn");
+const backupLocationButton = document.querySelector("#backupLocationBtn");
 const sectionTemplate = document.querySelector("#statusSectionTemplate");
 const jobTemplate = document.querySelector("#jobItemTemplate");
 
@@ -14,6 +14,7 @@ let dragPlaceholder = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   applications = await loadApplications();
+  await updateBackupButtonLabel();
   renderApplications();
 });
 
@@ -35,6 +36,7 @@ importInput.addEventListener("change", async () => {
     const importedApplications = await readApplicationsBackup(file);
     applications = importedApplications;
     await saveApplications(applications);
+    await writeBackupWithStatus("Backup updated after restore.", true);
     renderApplications();
     showImportMessage(`${applications.length} ${applications.length === 1 ? "application" : "applications"} restored from backup.`);
   } catch (error) {
@@ -42,17 +44,26 @@ importInput.addEventListener("change", async () => {
   }
 });
 
-exportButton.addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify(applications, null, 2)], {
-    type: "application/json"
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `jobnest-applications-${new Date().toISOString().slice(0, 10)}.json`;
-  anchor.click();
-  URL.revokeObjectURL(url);
+backupLocationButton.addEventListener("click", async () => {
+  try {
+    const handle = await chooseBackupFile();
+    updateBackupButtonLabel(handle);
+    await writeBackupWithStatus("Backup file connected and updated.", true);
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      alert(error.message);
+    }
+  }
 });
+
+async function updateBackupButtonLabel(handle) {
+  const backupHandle = handle || await getBackupFileHandle();
+
+  backupLocationButton.textContent = backupHandle ? `Backup: ${backupHandle.name}` : "Choose Backup File";
+  backupLocationButton.title = backupHandle
+    ? `Backup file: ${backupHandle.name}`
+    : "Choose backup file";
+}
 
 async function readApplicationsBackup(file) {
   const text = await file.text();
@@ -81,6 +92,31 @@ function showImportMessage(message) {
       importMessage.textContent = "";
     }
   }, 4500);
+}
+
+async function writeBackupWithStatus(successMessage, requestPermission = false) {
+  try {
+    const backupHandle = await getBackupFileHandle();
+    if (!backupHandle) {
+      return false;
+    }
+
+    const didWrite = await writeApplicationsBackup(applications, { requestPermission });
+
+    if (didWrite && successMessage) {
+      showImportMessage(successMessage);
+    }
+
+    if (!didWrite) {
+      showImportMessage("Backup file not updated. Choose Backup File again.");
+    }
+
+    return didWrite;
+  } catch (error) {
+    console.warn("Backup write failed", error);
+    showImportMessage("Backup file not updated. Choose Backup File again.");
+    return false;
+  }
 }
 
 function renderApplications() {
@@ -331,6 +367,7 @@ async function moveApplication(id, nextStatus, nextApplicationId) {
 
   applications = remainingApplications;
   await saveApplications(applications);
+  await writeBackupWithStatus();
   renderApplications();
 }
 
@@ -368,5 +405,6 @@ function findLastIndex(items, predicate) {
 async function deleteApplication(id) {
   applications = applications.filter((application) => application.id !== id);
   await saveApplications(applications);
+  await writeBackupWithStatus();
   renderApplications();
 }

@@ -1,4 +1,7 @@
 const STORAGE_KEY = "jobnest.applications";
+const BACKUP_DB_NAME = "jobnest.backup";
+const BACKUP_STORE_NAME = "backup";
+const BACKUP_HANDLE_KEY = "backupFileHandle";
 
 const STATUSES = [
   { value: "saved", label: "Saved" },
@@ -20,6 +23,101 @@ async function saveApplications(nextApplications) {
   await chrome.storage.local.set({
     [STORAGE_KEY]: nextApplications
   });
+}
+
+async function chooseBackupFile() {
+  if (!window.showSaveFilePicker) {
+    throw new Error("Automatic backup needs a Chromium browser with File System Access support.");
+  }
+
+  const handle = await window.showSaveFilePicker({
+    suggestedName: "jobnest-backup.json",
+    types: [
+      {
+        description: "JobNest backup",
+        accept: {
+          "application/json": [".json"]
+        }
+      }
+    ]
+  });
+
+  const hasPermission = await verifyBackupPermission(handle, true);
+  if (!hasPermission) {
+    throw new Error("Backup file permission was not granted.");
+  }
+
+  await storeBackupFileHandle(handle);
+  return handle;
+}
+
+async function writeApplicationsBackup(nextApplications, options = {}) {
+  const handle = await getBackupFileHandle();
+  if (!handle) {
+    return false;
+  }
+
+  const hasPermission = await verifyBackupPermission(handle, Boolean(options.requestPermission));
+  if (!hasPermission) {
+    return false;
+  }
+
+  const writable = await handle.createWritable();
+  await writable.write(JSON.stringify(nextApplications, null, 2));
+  await writable.close();
+  return true;
+}
+
+async function getBackupFileHandle() {
+  const db = await openBackupDB();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(BACKUP_STORE_NAME, "readonly");
+    const store = transaction.objectStore(BACKUP_STORE_NAME);
+    const request = store.get(BACKUP_HANDLE_KEY);
+
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function storeBackupFileHandle(handle) {
+  const db = await openBackupDB();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(BACKUP_STORE_NAME, "readwrite");
+    const store = transaction.objectStore(BACKUP_STORE_NAME);
+    const request = store.put(handle, BACKUP_HANDLE_KEY);
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function openBackupDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(BACKUP_DB_NAME, 1);
+
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(BACKUP_STORE_NAME);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function verifyBackupPermission(handle, requestAccess) {
+  const options = { mode: "readwrite" };
+
+  if ((await handle.queryPermission(options)) === "granted") {
+    return true;
+  }
+
+  if (!requestAccess) {
+    return false;
+  }
+
+  return (await handle.requestPermission(options)) === "granted";
 }
 
 function statusLabel(value) {
