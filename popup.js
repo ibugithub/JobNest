@@ -6,8 +6,17 @@ let applications = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
   setDefaultAppliedDate();
+  applyDraft(await loadPopupDraft());
   await prefillFromActiveTab();
   applications = await loadApplications();
+});
+
+form.addEventListener("input", () => {
+  saveCurrentDraft();
+});
+
+form.addEventListener("change", () => {
+  saveCurrentDraft();
 });
 
 form.addEventListener("submit", async (event) => {
@@ -35,6 +44,7 @@ form.addEventListener("submit", async (event) => {
 
   applications = [application, ...applications];
   await saveApplications(applications);
+  await clearPopupDraft();
   try {
     await writeApplicationsBackup(applications);
   } catch (error) {
@@ -82,6 +92,30 @@ function simplifyTitle(title) {
 
 function setDefaultAppliedDate() {
   document.querySelector("#appliedDate").value = todayDateString();
+}
+
+function applyDraft(draft) {
+  const fields = ["company", "role", "url", "location", "status", "appliedDate", "notes"];
+
+  for (const field of fields) {
+    const input = form.elements[field];
+    if (input && draft[field]) {
+      input.value = draft[field];
+    }
+  }
+}
+
+function saveCurrentDraft() {
+  const formData = new FormData(form);
+  savePopupDraft({
+    company: clean(formData.get("company")),
+    role: clean(formData.get("role")),
+    url: clean(formData.get("url")),
+    location: clean(formData.get("location")),
+    status: formData.get("status") || "saved",
+    appliedDate: formData.get("appliedDate") || todayDateString(),
+    notes: clean(formData.get("notes"))
+  });
 }
 
 function showSaveMessage(message) {

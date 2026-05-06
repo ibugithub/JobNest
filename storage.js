@@ -1,4 +1,5 @@
 const STORAGE_KEY = "jobnest.applications";
+const DRAFT_STORAGE_KEY = "jobnest.popupDraft";
 const BACKUP_DB_NAME = "jobnest.backup";
 const BACKUP_STORE_NAME = "backup";
 const BACKUP_HANDLE_KEY = "backupFileHandle";
@@ -23,6 +24,23 @@ async function saveApplications(nextApplications) {
   await chrome.storage.local.set({
     [STORAGE_KEY]: nextApplications
   });
+}
+
+async function loadPopupDraft() {
+  const result = await chrome.storage.local.get(DRAFT_STORAGE_KEY);
+  return result[DRAFT_STORAGE_KEY] && typeof result[DRAFT_STORAGE_KEY] === "object"
+    ? result[DRAFT_STORAGE_KEY]
+    : {};
+}
+
+async function savePopupDraft(draft) {
+  await chrome.storage.local.set({
+    [DRAFT_STORAGE_KEY]: draft
+  });
+}
+
+async function clearPopupDraft() {
+  await chrome.storage.local.remove(DRAFT_STORAGE_KEY);
 }
 
 async function chooseBackupFile() {
