@@ -21,12 +21,14 @@
         </div>
       </header>
 
-      <section class="toolbar" aria-label="Application filters">
-        <input id="search" class="search-input" type="search" placeholder="Search company, role, or location">
-      </section>
-
       <section class="applications-section" aria-labelledby="applicationsTitle">
-        <h2 id="applicationsTitle">Saved jobs</h2>
+        <div class="applications-header">
+          <h2 id="applicationsTitle">Saved jobs</h2>
+          <label class="search-control" aria-label="Search applications">
+            <span class="search-icon" aria-hidden="true"></span>
+            <input id="search" class="search-input" type="search" placeholder="Search company, role, or location">
+          </label>
+        </div>
         <div id="sectionsList" class="sections-list" aria-live="polite"></div>
       </section>
     </main>
