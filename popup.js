@@ -38,6 +38,14 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (applications.length === 0) {
+    const shouldRestoreFirst = await backupHasApplications();
+    if (shouldRestoreFirst) {
+      await redirectToBackupSetup("restoreRequired");
+      return;
+    }
+  }
+
   const formData = new FormData(form);
   const status = formData.get("status") || "saved";
   const statusDate = formData.get("appliedDate") || todayDateString();
@@ -88,11 +96,28 @@ openTrackerButton.addEventListener("click", () => {
 });
 
 async function redirectToBackupSetup(reason) {
-  showSaveMessage("Select a backup file before saving jobs.");
+  showSaveMessage(reason === "restoreRequired" ? "Restore your backup before saving new jobs." : "Select a backup file before saving jobs.");
   await chrome.tabs.create({
     url: chrome.runtime.getURL(`tracker.html?setup=${reason}`)
   });
   window.close();
+}
+
+async function backupHasApplications() {
+  try {
+    const file = await readConnectedBackupFile({ requestPermission: true });
+    const backupApplications = await readApplicationsBackup(file);
+    return backupApplications.length > 0;
+  } catch (error) {
+    if (isMissingBackupFileError(error)) {
+      await redirectToBackupSetup("backupMissing");
+      return true;
+    }
+
+    console.warn("Backup read failed", error);
+    await redirectToBackupSetup("backupRequired");
+    return true;
+  }
 }
 
 async function prefillFromActiveTab() {

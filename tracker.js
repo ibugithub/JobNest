@@ -142,6 +142,11 @@ async function showSetupMessageFromUrl() {
   const backupHandle = await getBackupFileHandle();
   clearSetupMessageFromUrl();
 
+  if (setupReason === "restoreRequired") {
+    showImportMessage("Browser storage is empty, but your backup file has saved applications. Restore Backup before adding new jobs.");
+    return;
+  }
+
   if (backupHandle) {
     return;
   }
@@ -160,25 +165,6 @@ function clearSetupMessageFromUrl() {
   const url = new URL(window.location.href);
   url.searchParams.delete("setup");
   window.history.replaceState({}, "", url);
-}
-
-async function readApplicationsBackup(file) {
-  const text = await file.text();
-  const parsed = JSON.parse(text);
-
-  if (!Array.isArray(parsed)) {
-    throw new Error("Import failed. Please choose a JobNest JSON export file.");
-  }
-
-  return parsed.map(normalizeImportedApplication);
-}
-
-function normalizeImportedApplication(application) {
-  if (!application || typeof application !== "object") {
-    throw new Error("Import failed. Every application must be an object.");
-  }
-
-  return normalizeApplicationRecord(application);
 }
 
 function showImportMessage(message) {

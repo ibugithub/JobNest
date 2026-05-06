@@ -119,6 +119,31 @@ async function readConnectedBackupFile(options = {}) {
   }
 }
 
+async function readApplicationsBackup(file) {
+  const text = await file.text();
+  const trimmedText = text.trim();
+
+  if (!trimmedText) {
+    return [];
+  }
+
+  const parsed = JSON.parse(trimmedText);
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Restore failed. The backup file must contain a JobNest application list.");
+  }
+
+  return parsed.map(normalizeImportedApplication);
+}
+
+function normalizeImportedApplication(application) {
+  if (!application || typeof application !== "object") {
+    throw new Error("Restore failed. Every application must be an object.");
+  }
+
+  return normalizeApplicationRecord(application);
+}
+
 async function verifyBackupFileStillExists() {
   const handle = await getBackupFileHandle();
   if (!handle) {
