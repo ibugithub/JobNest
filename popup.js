@@ -1,5 +1,5 @@
 const form = document.querySelector("#jobForm");
-const summary = document.querySelector("#summary");
+const saveMessage = document.querySelector("#saveMessage");
 const openTrackerButton = document.querySelector("#openTrackerBtn");
 
 let applications = [];
@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   setDefaultAppliedDate();
   await prefillFromActiveTab();
   applications = await loadApplications();
-  renderSummary();
 });
 
 form.addEventListener("submit", async (event) => {
@@ -39,7 +38,7 @@ form.addEventListener("submit", async (event) => {
   form.reset();
   setDefaultAppliedDate();
   await prefillFromActiveTab();
-  renderSummary();
+  showSaveMessage("Application saved.");
 });
 
 openTrackerButton.addEventListener("click", () => {
@@ -80,6 +79,10 @@ function setDefaultAppliedDate() {
   document.querySelector("#appliedDate").value = todayDateString();
 }
 
-function renderSummary() {
-  summary.textContent = `${applications.length} ${applications.length === 1 ? "application" : "applications"} tracked`;
+function showSaveMessage(message) {
+  saveMessage.textContent = message;
+
+  window.setTimeout(() => {
+    window.close();
+  }, 700);
 }

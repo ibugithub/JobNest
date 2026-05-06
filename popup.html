@@ -9,32 +9,37 @@
   <body>
     <main class="app-shell">
       <header class="topbar">
-        <div>
-          <h1>JobNest</h1>
-          <p id="summary">0 applications tracked</p>
+        <div class="brand-block">
+          <span class="brand-mark" aria-hidden="true">J</span>
+          <div>
+            <h1>JobNest</h1>
+          </div>
         </div>
         <button id="openTrackerBtn" class="icon-button" type="button" title="Open tracker" aria-label="Open tracker">
-          <span aria-hidden="true">Open</span>
+          <span aria-hidden="true">View Jobs</span>
         </button>
       </header>
 
       <section class="entry-panel" aria-labelledby="addJobTitle">
-        <h2 id="addJobTitle">Add application</h2>
+        <div class="panel-heading">
+          <h2 id="addJobTitle">Add application</h2>
+          <span class="panel-pill">Quick save</span>
+        </div>
         <form id="jobForm" autocomplete="off">
           <div class="field-grid">
             <label>
               Company
-              <input id="company" name="company" type="text" required placeholder="...">
+              <input id="company" name="company" type="text" required placeholder="Company name">
             </label>
             <label>
               Role
-              <input id="role" name="role" type="text" required placeholder="...">
+              <input id="role" name="role" type="text" required placeholder="Job title">
             </label>
           </div>
 
           <label>
             Job URL
-            <input id="url" name="url" type="url" placeholder="...">
+            <input id="url" name="url" type="url" placeholder="https://company.com/jobs/...">
           </label>
 
           <div class="field-grid">
@@ -66,6 +71,7 @@
           </label>
 
           <button class="primary-button" type="submit">Save application</button>
+          <p id="saveMessage" class="save-message" aria-live="polite"></p>
         </form>
       </section>
     </main>
