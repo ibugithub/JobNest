@@ -15,17 +15,23 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const formData = new FormData(form);
+  const status = formData.get("status") || "saved";
+  const statusDate = formData.get("appliedDate") || todayDateString();
+  const timestamp = new Date().toISOString();
   const application = {
     id: crypto.randomUUID(),
     company: clean(formData.get("company")),
     role: clean(formData.get("role")),
     url: clean(formData.get("url")),
     location: clean(formData.get("location")),
-    status: formData.get("status") || "saved",
-    appliedDate: formData.get("appliedDate") || "",
+    status,
+    appliedDate: statusDate,
     notes: clean(formData.get("notes")),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    events: [
+      createStatusEvent(status, statusDate)
+    ]
   };
 
   applications = [application, ...applications];
@@ -71,7 +77,7 @@ function simplifyTitle(title) {
 }
 
 function setDefaultAppliedDate() {
-  document.querySelector("#appliedDate").value = new Date().toISOString().slice(0, 10);
+  document.querySelector("#appliedDate").value = todayDateString();
 }
 
 function renderSummary() {

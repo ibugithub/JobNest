@@ -8,6 +8,7 @@ This first version is intentionally small:
 - Save a job application from the extension popup.
 - Auto-fill the job URL from the active browser tab.
 - Track company, role, location, status, date applied, notes, and source URL.
+- Keep a status event history for future statistics.
 - Open a dedicated tracker page for saved applications.
 - Search saved applications and review them in status sections on the tracker page.
 - Drag application cards between sections to update status, or reorder cards inside a section.

@@ -70,23 +70,7 @@ function normalizeImportedApplication(application) {
     throw new Error("Import failed. Every application must be an object.");
   }
 
-  return {
-    id: clean(application.id) || crypto.randomUUID(),
-    company: clean(application.company),
-    role: clean(application.role),
-    url: clean(application.url),
-    location: clean(application.location),
-    status: normalizeImportedStatus(application.status),
-    appliedDate: clean(application.appliedDate),
-    notes: clean(application.notes),
-    createdAt: clean(application.createdAt) || new Date().toISOString(),
-    updatedAt: clean(application.updatedAt) || new Date().toISOString()
-  };
-}
-
-function normalizeImportedStatus(status) {
-  const statusValue = clean(status);
-  return STATUSES.some((item) => item.value === statusValue) ? statusValue : "saved";
+  return normalizeApplicationRecord(application);
 }
 
 function showImportMessage(message) {
@@ -192,8 +176,10 @@ function createApplicationItem(application) {
 }
 
 function buildMetaLine(application) {
+  const status = getApplicationStatus(application);
+  const statusDate = getStatusEventDate(application, status);
   const parts = [
-    application.appliedDate ? `Applied ${application.appliedDate}` : "",
+    statusDate ? `${statusLabel(status)} ${statusDate}` : "",
     application.location
   ].filter(Boolean);
 
@@ -319,10 +305,15 @@ async function moveApplication(id, nextStatus, nextApplicationId) {
     return;
   }
 
+  const previousStatus = getApplicationStatus(movedApplication);
+  const events = Array.isArray(movedApplication.events) ? movedApplication.events : [];
   const updatedApplication = {
     ...movedApplication,
     status: nextStatus,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    events: previousStatus === nextStatus
+      ? events
+      : buildStatusEventsForMove(events, nextStatus)
   };
 
   const remainingApplications = applications.filter((application) => application.id !== id);
@@ -340,6 +331,27 @@ async function moveApplication(id, nextStatus, nextApplicationId) {
   applications = remainingApplications;
   await saveApplications(applications);
   renderApplications();
+}
+
+function buildStatusEventsForMove(events, nextStatus) {
+  if (nextStatus === "saved") {
+    return [createStatusEvent("saved")];
+  }
+
+  const nextStatusIndex = getStatusIndex(nextStatus);
+  const retainedEvents = events.filter((event) => {
+    const eventStatusIndex = getStatusIndex(event.status);
+    return event.type === "status" && eventStatusIndex >= 0 && eventStatusIndex < nextStatusIndex;
+  });
+
+  return [
+    ...retainedEvents,
+    createStatusEvent(nextStatus)
+  ];
+}
+
+function getStatusIndex(status) {
+  return STATUSES.findIndex((item) => item.value === status);
 }
 
 function findLastIndex(items, predicate) {
