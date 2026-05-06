@@ -15,6 +15,15 @@
           <p id="summary">0 applications tracked</p>
         </div>
         <div class="header-actions stats-actions">
+          <div class="export-menu">
+            <button id="exportBtn" class="secondary-button" type="button" aria-expanded="false">Export Report </button>
+            <div id="exportMenu" class="export-options" hidden>
+              <button type="button" data-export-range="daily">Daily report</button>
+              <button type="button" data-export-range="weekly">Weekly report</button>
+              <button type="button" data-export-range="monthly">Monthly report</button>
+              <button type="button" data-export-range="yearly">Yearly report</button>
+            </div>
+          </div>
           <button id="trackerBtn" class="secondary-button" type="button">View Jobs</button>
         </div>
       </header>

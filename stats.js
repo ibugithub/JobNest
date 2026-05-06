@@ -1,5 +1,7 @@
 const summary = document.querySelector("#summary");
 const trackerButton = document.querySelector("#trackerBtn");
+const exportButton = document.querySelector("#exportBtn");
+const exportMenu = document.querySelector("#exportMenu");
 const totalApplications = document.querySelector("#totalApplications");
 const appliedApplications = document.querySelector("#appliedApplications");
 const interviewApplications = document.querySelector("#interviewApplications");
@@ -27,6 +29,32 @@ window.addEventListener("resize", () => {
 
 trackerButton.addEventListener("click", () => {
   window.location.href = chrome.runtime.getURL("tracker.html");
+});
+
+exportButton.addEventListener("click", () => {
+  const isOpen = !exportMenu.hidden;
+  exportMenu.hidden = isOpen;
+  exportButton.setAttribute("aria-expanded", String(!isOpen));
+});
+
+exportMenu.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-export-range]");
+  if (!button) {
+    return;
+  }
+
+  exportMenu.hidden = true;
+  exportButton.setAttribute("aria-expanded", "false");
+  exportStatsReport(button.dataset.exportRange);
+});
+
+document.addEventListener("click", (event) => {
+  if (event.target.closest(".export-menu")) {
+    return;
+  }
+
+  exportMenu.hidden = true;
+  exportButton.setAttribute("aria-expanded", "false");
 });
 
 rangeButtons.forEach((button) => {
@@ -394,6 +422,231 @@ function renderCompanyApplications() {
   });
 }
 
+function exportStatsReport(range) {
+  const reportPeriod = getReportPeriod(range);
+  const reportRows = buildReportRows(reportPeriod);
+  const reportApplications = getApplicationsForPeriod(reportPeriod);
+  const companyCounts = countBy(reportApplications, (application) => clean(application.company) || "Not specified");
+  const reportWindow = window.open("", "_blank");
+
+  if (!reportWindow) {
+    alert("Allow popups to export the PDF report.");
+    return;
+  }
+
+  reportWindow.document.write(buildReportHtml(range, reportPeriod, reportRows, reportApplications, companyCounts));
+  reportWindow.document.close();
+  reportWindow.focus();
+  reportWindow.addEventListener("load", () => {
+    reportWindow.print();
+  });
+}
+
+function buildReportRows(reportPeriod) {
+  const appliedDates = getApplicationsForPeriod(reportPeriod).map(getAppliedDate).filter(Boolean);
+  const counts = countDatesByBucket(appliedDates, reportPeriod.bucketRange);
+
+  return reportPeriod.buckets.map((bucket) => ({
+    label: bucket.label,
+    key: bucket.key,
+    value: counts.get(bucket.key) || 0
+  }));
+}
+
+function getApplicationsForPeriod(reportPeriod) {
+  return applications
+    .filter(hasAppliedActivity)
+    .filter((application) => {
+      const date = parseDate(getAppliedDate(application));
+      return date && date >= reportPeriod.startDate && date <= reportPeriod.endDate;
+    });
+}
+
+function buildReportHtml(range, reportPeriod, rows, reportApplications, companyCounts) {
+  const generatedAt = new Date().toLocaleString();
+  const periodText = `${formatReportDate(reportPeriod.startDate)} - ${formatReportDate(reportPeriod.endDate)}`;
+  const totalApplied = reportApplications.length;
+  const interviews = reportApplications.filter((application) => hasStatusActivity(application, "interview")).length;
+  const offers = reportApplications.filter((application) => hasStatusActivity(application, "offer")).length;
+
+  return `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>JobNest ${escapeHtml(toTitleCase(range))} Report</title>
+        <style>
+          * { box-sizing: border-box; }
+          body { margin: 0; color: #111827; font-family: Inter, Arial, sans-serif; }
+          main { padding: 32px; }
+          header { display: flex; justify-content: space-between; gap: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 18px; }
+          h1 { margin: 0; font-size: 26px; }
+          h2 { margin: 26px 0 12px; font-size: 16px; }
+          p { margin: 5px 0; color: #64748b; }
+          .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 22px; }
+          .metric { border: 1px solid #dbe3ee; border-radius: 8px; padding: 14px; }
+          .metric span { color: #64748b; font-size: 12px; font-weight: 700; }
+          .metric strong { display: block; margin-top: 6px; font-size: 24px; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border-bottom: 1px solid #e5e7eb; padding: 9px 8px; text-align: left; vertical-align: top; }
+          th { color: #475569; font-size: 12px; text-transform: uppercase; }
+          td { font-size: 13px; }
+          .muted { color: #64748b; }
+          @media print { main { padding: 20px; } button { display: none; } }
+        </style>
+      </head>
+      <body>
+        <main>
+          <header>
+            <div>
+              <h1>JobNest ${escapeHtml(toTitleCase(range))} Report</h1>
+              <p>${escapeHtml(periodText)}</p>
+              <p>Generated ${escapeHtml(generatedAt)}</p>
+            </div>
+            <p>${escapeHtml(String(applications.length))} total applications tracked</p>
+          </header>
+
+          <section class="summary">
+            <div class="metric"><span>Applied in report</span><strong>${escapeHtml(String(totalApplied))}</strong></div>
+            <div class="metric"><span>Interviews</span><strong>${escapeHtml(String(interviews))}</strong></div>
+            <div class="metric"><span>Offers</span><strong>${escapeHtml(String(offers))}</strong></div>
+          </section>
+
+          <section>
+            <h2>${escapeHtml(toTitleCase(range))} Activity</h2>
+            ${buildRowsTable(rows, ["Period", "Applications"], (row) => [row.label, String(row.value)])}
+          </section>
+
+          <section>
+            <h2>Companies</h2>
+            ${buildRowsTable(companyCounts, ["Company", "Applications"], ([company, count]) => [company, String(count)])}
+          </section>
+
+          <section>
+            <h2>Application Details</h2>
+            ${buildRowsTable(reportApplications, ["Company", "Role", "Status", "Date", "Location"], (application) => [
+              clean(application.company) || "Not specified",
+              clean(application.role) || "Untitled role",
+              statusLabel(getApplicationStatus(application)),
+              getAppliedDate(application) || "",
+              clean(application.location) || ""
+            ])}
+          </section>
+        </main>
+      </body>
+    </html>
+  `;
+}
+
+function buildRowsTable(rows, headers, getCells) {
+  if (rows.length === 0) {
+    return `<p class="muted">No data available.</p>`;
+  }
+
+  return `
+    <table>
+      <thead>
+        <tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr>
+      </thead>
+      <tbody>
+        ${rows.map((row) => `<tr>${getCells(row).map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function getReportPeriod(range) {
+  const today = startOfDay(new Date());
+
+  if (range === "weekly") {
+    const startDate = startOfWeek(today);
+    const endDate = endOfDay(addDays(startDate, 6));
+    return {
+      startDate,
+      endDate,
+      bucketRange: "daily",
+      buckets: createBucketsBetween(startDate, endDate, "daily")
+    };
+  }
+
+  if (range === "monthly") {
+    const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endDate = endOfDay(new Date(today.getFullYear(), today.getMonth() + 1, 0));
+    return {
+      startDate,
+      endDate,
+      bucketRange: "daily",
+      buckets: createBucketsBetween(startDate, endDate, "daily")
+    };
+  }
+
+  if (range === "yearly") {
+    const startDate = new Date(today.getFullYear(), 0, 1);
+    const endDate = endOfDay(new Date(today.getFullYear(), 11, 31));
+    return {
+      startDate,
+      endDate,
+      bucketRange: "monthly",
+      buckets: createMonthsBetween(startDate, endDate)
+    };
+  }
+
+  return {
+    startDate: today,
+    endDate: endOfDay(today),
+    bucketRange: "daily",
+    buckets: [
+      {
+        key: toDateKey(today),
+        label: "Today"
+      }
+    ]
+  };
+}
+
+function createBucketsBetween(startDate, endDate, bucketRange) {
+  const buckets = [];
+  let date = startOfDay(startDate);
+
+  while (date <= endDate) {
+    buckets.push({
+      key: getBucketKey(date, bucketRange),
+      label: formatDayLabel(date)
+    });
+    date = addDays(date, 1);
+  }
+
+  return buckets;
+}
+
+function createMonthsBetween(startDate, endDate) {
+  const buckets = [];
+  let date = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+
+  while (date <= endDate) {
+    buckets.push({
+      key: getBucketKey(date, "monthly"),
+      label: date.toLocaleDateString(undefined, { month: "short" })
+    });
+    date = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+  }
+
+  return buckets;
+}
+
+function toTitleCase(value) {
+  return `${value.slice(0, 1).toUpperCase()}${value.slice(1)}`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function createTimeBuckets(range) {
   if (range === "weekly") {
     return createRecentBuckets(8, startOfWeek, addDays, 7, formatWeekLabel);
@@ -546,6 +799,10 @@ function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+function endOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+}
+
 function startOfWeek(date) {
   const day = date.getDay();
   const mondayOffset = day === 0 ? -6 : 1 - day;
@@ -572,4 +829,8 @@ function formatDayLabel(date) {
 
 function formatWeekLabel(date) {
   return `Week ${date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+}
+
+function formatReportDate(date) {
+  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }

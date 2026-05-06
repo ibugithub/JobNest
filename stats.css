@@ -3,7 +3,51 @@
 }
 
 .stats-actions {
-  grid-template-columns: auto;
+  grid-template-columns: auto auto;
+}
+
+.export-menu {
+  position: relative;
+}
+
+.export-options {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 10;
+  display: grid;
+  min-width: 180px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.export-options[hidden] {
+  display: none;
+}
+
+.export-options button {
+  height: 38px;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: #ffffff;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0 12px;
+  text-align: left;
+}
+
+.export-options button:last-child {
+  border-bottom: 0;
+}
+
+.export-options button:hover {
+  background: #eff6ff;
+  color: var(--accent);
 }
 
 .stats-grid {
