@@ -1,18 +1,20 @@
 # JobNest
 A browser extension to track job applications without paying for a hosted tracker.
 
-## First milestone
-
-This first version is intentionally small:
+## Features
 
 - Save a job application from the extension popup.
 - Auto-fill the job URL from the active browser tab.
 - Track company, role, location, status, date applied, notes, and source URL.
-- Keep a status event history for future statistics.
+- Keep a status event history for statistics.
 - Open a dedicated tracker page for saved applications.
 - Search saved applications and review them in status sections on the tracker page.
-- Drag application cards between sections to update status, or reorder cards inside a section.
-- Export and import your applications as JSON from the tracker page.
+- Drag application cards between sections to update status and reorder cards.
+- Require a local backup JSON file before saving applications.
+- Automatically write application updates to the selected local backup file.
+- Restore from the selected backup file when browser storage is empty.
+- View application statistics by day, week, month, and year.
+- Export printable PDF reports from the statistics page.
 - Store everything locally in your browser with `chrome.storage.local`.
 
 ## Load the extension in Chrome or Chromium
@@ -33,12 +35,18 @@ popup.js            Quick-add popup behavior
 storage.js          Shared local storage helpers
 tracker.html        Dedicated applications page
 tracker.css         Tracker page styling
-tracker.js          Tracker page list/filter/export behavior
+tracker.js          Tracker page list/filter/drag behavior
+stats.html          Statistics page
+stats.css           Statistics page styling
+stats.js            Statistics and printable report behavior
+icon.png            Extension icon source
+PRIVACY.md          Privacy policy draft
 ```
 
-## Next useful steps
+## Publishing checklist
 
-- Add a content script that can detect company/title from job pages.
-- Add CSV export.
-- Add tags, salary range, and reminder dates.
-- Add import so you can migrate data between browsers.
+- Add Chrome Web Store screenshots.
+- Add a public privacy policy URL.
+- Create a clean ZIP with only extension files.
+- Upload the ZIP in the Chrome Web Store Developer Dashboard.
+- Complete privacy, distribution, and store listing forms.

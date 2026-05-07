@@ -1,0 +1,54 @@
+[
+  {
+    "id": "1f0289da-8bdf-4d39-b87c-c3acc5ef5155",
+    "company": "juh",
+    "role": "JobNest Tracker",
+    "url": "",
+    "location": "",
+    "status": "applied",
+    "appliedDate": "2026-05-06",
+    "notes": "",
+    "createdAt": "2026-05-06T14:52:16.619Z",
+    "updatedAt": "2026-05-06T14:54:09.557Z",
+    "events": [
+      {
+        "type": "status",
+        "status": "saved",
+        "date": "2026-05-06",
+        "createdAt": "2026-05-06T14:53:04.359Z"
+      },
+      {
+        "type": "status",
+        "status": "applied",
+        "date": "2026-05-06",
+        "createdAt": "2026-05-06T14:54:09.558Z"
+      }
+    ]
+  },
+  {
+    "id": "56198bb7-0c50-4474-84cd-574922bc70e8",
+    "company": "oo",
+    "role": "JobNest Tracker",
+    "url": "",
+    "location": "",
+    "status": "applied",
+    "appliedDate": "2026-05-06",
+    "notes": "",
+    "createdAt": "2026-05-06T14:54:26.874Z",
+    "updatedAt": "2026-05-06T14:54:31.022Z",
+    "events": [
+      {
+        "type": "status",
+        "status": "saved",
+        "date": "2026-05-06",
+        "createdAt": "2026-05-06T14:54:26.874Z"
+      },
+      {
+        "type": "status",
+        "status": "applied",
+        "date": "2026-05-06",
+        "createdAt": "2026-05-06T14:54:31.022Z"
+      }
+    ]
+  }
+]
