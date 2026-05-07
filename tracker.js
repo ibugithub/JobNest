@@ -83,7 +83,9 @@ gateBackupButton.addEventListener("click", async () => {
 
 async function connectBackupFile() {
   try {
-    const handle = await chooseBackupFile();
+    const handle = backupLocationButton.textContent.startsWith("Reconnect")
+      ? await reconnectBackupFile()
+      : await chooseBackupFile();
     await updateBackupButtonLabel(handle);
     await updateBackupGate(handle);
 
@@ -126,6 +128,17 @@ function showBackupDisconnectedState(message) {
   backupGate.hidden = false;
   applicationsSection.classList.add("is-disabled");
   searchInput.disabled = true;
+  showImportMessage(message);
+}
+
+async function showBackupPermissionNeededState(message) {
+  const backupHandle = await getBackupFileHandle();
+
+  backupLocationButton.textContent = backupHandle ? `Reconnect: ${backupHandle.name}` : "Choose Backup File";
+  backupLocationButton.disabled = false;
+  backupLocationButton.title = backupHandle
+    ? `Reconnect backup file: ${backupHandle.name}`
+    : "Choose backup file";
   showImportMessage(message);
 }
 
@@ -211,14 +224,23 @@ async function writeBackupWithStatus(successMessage, requestPermission = false) 
     }
 
     if (!didWrite) {
-      await clearBackupFileHandle();
-      showBackupDisconnectedState("Backup file not updated. Choose Backup File again.");
+      await showBackupPermissionNeededState("Backup file permission is needed. Click Reconnect Backup.");
     }
 
     return didWrite;
   } catch (error) {
     console.warn("Backup write failed", error);
-    showBackupDisconnectedState(isMissingBackupFileError(error) ? MISSING_BACKUP_FILE_MESSAGE : "Backup file not updated. Choose Backup File again.");
+    if (isMissingBackupFileError(error)) {
+      showBackupDisconnectedState(MISSING_BACKUP_FILE_MESSAGE);
+      return false;
+    }
+
+    if (isBackupPermissionError(error)) {
+      await showBackupPermissionNeededState("Backup file permission is needed. Click Reconnect Backup.");
+      return false;
+    }
+
+    showImportMessage("Backup file not updated. Your board change was saved in browser storage.");
     return false;
   }
 }
@@ -380,8 +402,14 @@ function setupDropTarget(jobList, statusValue) {
       return;
     }
 
-    await moveApplication(applicationId, statusValue, nextApplicationId);
-    clearDropState();
+    try {
+      await moveApplication(applicationId, statusValue, nextApplicationId);
+    } catch (error) {
+      console.warn("Move failed", error);
+      renderApplications();
+    } finally {
+      clearDropState();
+    }
   });
 }
 
@@ -431,8 +459,13 @@ function getNextApplicationId(placeholder) {
 }
 
 function clearDropState() {
+  draggedApplicationId = "";
   dragPlaceholder?.remove();
   dragPlaceholder = null;
+  document.querySelectorAll(".is-dragging, .is-hidden-during-drag").forEach((item) => {
+    item.classList.remove("is-dragging");
+    item.classList.remove("is-hidden-during-drag");
+  });
   clearDropTargets();
 }
 

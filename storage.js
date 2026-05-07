@@ -5,6 +5,8 @@ const BACKUP_STORE_NAME = "backup";
 const BACKUP_HANDLE_KEY = "backupFileHandle";
 const MISSING_BACKUP_FILE_MESSAGE = "Backup file was deleted. Choose Backup File again.";
 
+let backupFileHandleCache = null;
+
 const STATUSES = [
   { value: "saved", label: "Saved" },
   { value: "applied", label: "Applied" },
@@ -70,6 +72,21 @@ async function chooseBackupFile() {
   return handle;
 }
 
+async function reconnectBackupFile() {
+  const handle = await getBackupFileHandle();
+  if (!handle) {
+    return chooseBackupFile();
+  }
+
+  const hasPermission = await verifyBackupPermission(handle, true);
+  if (!hasPermission) {
+    throw createBackupPermissionError();
+  }
+
+  backupFileHandleCache = handle;
+  return handle;
+}
+
 async function writeApplicationsBackup(nextApplications, options = {}) {
   const handle = await getBackupFileHandle();
   if (!handle) {
@@ -78,7 +95,11 @@ async function writeApplicationsBackup(nextApplications, options = {}) {
 
   const hasPermission = await verifyBackupPermission(handle, Boolean(options.requestPermission));
   if (!hasPermission) {
-    return false;
+    if (options.requestPermission) {
+      return false;
+    }
+
+    throw createBackupPermissionError();
   }
 
   try {
@@ -164,6 +185,10 @@ async function verifyBackupFileStillExists() {
 }
 
 async function getBackupFileHandle() {
+  if (backupFileHandleCache) {
+    return backupFileHandleCache;
+  }
+
   const db = await openBackupDB();
 
   return new Promise((resolve, reject) => {
@@ -171,12 +196,16 @@ async function getBackupFileHandle() {
     const store = transaction.objectStore(BACKUP_STORE_NAME);
     const request = store.get(BACKUP_HANDLE_KEY);
 
-    request.onsuccess = () => resolve(request.result || null);
+    request.onsuccess = () => {
+      backupFileHandleCache = request.result || null;
+      resolve(backupFileHandleCache);
+    };
     request.onerror = () => reject(request.error);
   });
 }
 
 async function storeBackupFileHandle(handle) {
+  backupFileHandleCache = handle;
   const db = await openBackupDB();
 
   return new Promise((resolve, reject) => {
@@ -190,6 +219,7 @@ async function storeBackupFileHandle(handle) {
 }
 
 async function clearBackupFileHandle() {
+  backupFileHandleCache = null;
   const db = await openBackupDB();
 
   return new Promise((resolve, reject) => {
@@ -234,10 +264,21 @@ function createMissingBackupFileError() {
   return error;
 }
 
+function createBackupPermissionError() {
+  const error = new Error("Backup file permission is needed. Click Backup to reconnect it.");
+  error.name = "BackupPermissionError";
+  return error;
+}
+
 function isMissingBackupFileError(error) {
   return error?.name === "NotFoundError"
     || error?.name === "MissingBackupFileError"
     || /file.*(deleted|missing|not found|not exist)/i.test(String(error?.message || ""));
+}
+
+function isBackupPermissionError(error) {
+  return error?.name === "BackupPermissionError"
+    || error?.name === "NotAllowedError";
 }
 
 function statusLabel(value) {
