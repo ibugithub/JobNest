@@ -15,6 +15,9 @@ const jobTemplate = document.querySelector("#jobItemTemplate");
 let applications = [];
 let draggedApplicationId = "";
 let dragPlaceholder = null;
+let dragState = null;
+let dragMoveFrame = 0;
+let pendingDragPoint = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   applications = await loadApplications();
@@ -294,7 +297,6 @@ function renderApplications() {
 
 function createApplicationItem(application) {
   const item = jobTemplate.content.firstElementChild.cloneNode(true);
-  item.draggable = true;
   item.dataset.applicationId = application.id;
   item.title = application.role;
   item.querySelector("h4").textContent = application.role;
@@ -305,25 +307,8 @@ function createApplicationItem(application) {
   notesLine.textContent = application.notes;
   notesLine.hidden = !application.notes;
 
-  item.addEventListener("dragstart", (event) => {
-    draggedApplicationId = application.id;
-    item.classList.add("is-dragging");
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", application.id);
-
-    dragPlaceholder = createDragPlaceholder(item);
-    requestAnimationFrame(() => {
-      item.classList.add("is-hidden-during-drag");
-    });
-  });
-
-  item.addEventListener("dragend", () => {
-    draggedApplicationId = "";
-    dragPlaceholder?.remove();
-    dragPlaceholder = null;
-    item.classList.remove("is-dragging");
-    item.classList.remove("is-hidden-during-drag");
-    clearDropTargets();
+  item.addEventListener("pointerdown", (event) => {
+    preparePointerDrag(event, item, application.id);
   });
 
   const openLink = item.querySelector(".open-link");
@@ -357,60 +342,182 @@ function getApplicationStatus(application) {
 }
 
 function setupDropTarget(jobList, statusValue) {
-  jobList.addEventListener("dragenter", (event) => {
-    event.preventDefault();
-    jobList.closest(".status-section").classList.add("is-drop-target");
-  });
+  jobList.dataset.status = statusValue;
+}
 
-  jobList.addEventListener("dragover", (event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    jobList.closest(".status-section").classList.add("is-drop-target");
-    scrollJobListDuringDrag(jobList, event.clientY);
+function preparePointerDrag(event, item, applicationId) {
+  if (event.button !== 0 || event.target.closest("a, button, input, select, textarea")) {
+    return;
+  }
 
-    if (!dragPlaceholder) {
+  dragState = {
+    applicationId,
+    item,
+    startX: event.clientX,
+    startY: event.clientY,
+    pointerX: event.clientX,
+    pointerY: event.clientY,
+    offsetX: 0,
+    offsetY: 0,
+    preview: null,
+    hasStarted: false
+  };
+
+  item.setPointerCapture?.(event.pointerId);
+  document.addEventListener("pointermove", handlePointerDragMove);
+  document.addEventListener("pointerup", handlePointerDragEnd, { once: true });
+  document.addEventListener("pointercancel", cancelPointerDrag, { once: true });
+}
+
+function handlePointerDragMove(event) {
+  if (!dragState) {
+    return;
+  }
+
+  dragState.pointerX = event.clientX;
+  dragState.pointerY = event.clientY;
+  pendingDragPoint = {
+    x: event.clientX,
+    y: event.clientY
+  };
+
+  if (!dragState.hasStarted) {
+    const moveDistance = Math.hypot(event.clientX - dragState.startX, event.clientY - dragState.startY);
+    if (moveDistance < 6) {
       return;
     }
 
-    const nextItem = getNextDropItem(jobList, event.clientY);
-    if (nextItem) {
-      jobList.insertBefore(dragPlaceholder, nextItem);
-    } else {
-      jobList.append(dragPlaceholder);
-    }
+    startPointerDrag();
+  }
+
+  event.preventDefault();
+
+  if (!dragMoveFrame) {
+    dragMoveFrame = requestAnimationFrame(updatePointerDrag);
+  }
+}
+
+function startPointerDrag() {
+  const rect = dragState.item.getBoundingClientRect();
+  const preview = dragState.item.cloneNode(true);
+
+  draggedApplicationId = dragState.applicationId;
+  dragState.hasStarted = true;
+  dragState.offsetX = dragState.startX - rect.left;
+  dragState.offsetY = dragState.startY - rect.top;
+  dragState.preview = preview;
+
+  preview.classList.add("drag-preview");
+  preview.style.width = `${rect.width}px`;
+  preview.style.height = `${rect.height}px`;
+  positionDragPreview(preview, dragState.pointerX, dragState.pointerY);
+  document.body.append(preview);
+
+  dragPlaceholder = createDragPlaceholder(dragState.item);
+  dragState.item.before(dragPlaceholder);
+  dragState.item.classList.add("is-dragging", "is-hidden-during-drag");
+  document.body.classList.add("is-board-dragging");
+  updatePointerDrag();
+}
+
+function updatePointerDrag() {
+  dragMoveFrame = 0;
+
+  if (!dragState?.hasStarted || !pendingDragPoint) {
+    return;
+  }
+
+  const { x, y } = pendingDragPoint;
+  const left = x - dragState.offsetX;
+  const top = y - dragState.offsetY;
+
+  dragState.preview.style.transform = `translate3d(${left}px, ${top}px, 0) rotate(0.35deg)`;
+  scrollDuringPointerDrag(x, y);
+  updateDropPosition(x, y);
+}
+
+function positionDragPreview(preview, pointerX, pointerY) {
+  const left = pointerX - dragState.offsetX;
+  const top = pointerY - dragState.offsetY;
+  preview.style.transform = `translate3d(${left}px, ${top}px, 0) rotate(0.35deg)`;
+}
+
+function updateDropPosition(pointerX, pointerY) {
+  if (!dragPlaceholder) {
+    return;
+  }
+
+  const targetList = getDropListAtPoint(pointerX, pointerY);
+  if (!targetList) {
+    clearDropTargets();
+    return;
+  }
+
+  clearDropTargets();
+  targetList.closest(".status-section").classList.add("is-drop-target");
+
+  const nextItem = getNextDropItem(targetList, pointerY);
+  const nextSibling = nextItem || null;
+
+  if (dragPlaceholder.parentElement === targetList && dragPlaceholder.nextElementSibling === nextSibling) {
+    return;
+  }
+
+  const currentList = dragPlaceholder.parentElement;
+  const animatedLists = currentList === targetList ? [targetList] : [currentList, targetList].filter(Boolean);
+
+  animateListsReorder(animatedLists, () => {
+    targetList.insertBefore(dragPlaceholder, nextSibling);
   });
+}
 
-  jobList.addEventListener("dragleave", (event) => {
-    if (!jobList.contains(event.relatedTarget)) {
-      jobList.closest(".status-section").classList.remove("is-drop-target");
-    }
-  });
+function getDropListAtPoint(pointerX, pointerY) {
+  const element = document.elementFromPoint(pointerX, pointerY);
+  const directList = element?.closest(".job-list");
 
-  jobList.addEventListener("drop", async (event) => {
-    event.preventDefault();
-    const applicationId = event.dataTransfer.getData("text/plain") || draggedApplicationId;
-    const nextApplicationId = getNextApplicationId(dragPlaceholder);
+  if (directList) {
+    return directList;
+  }
 
-    if (!applicationId) {
-      clearDropState();
-      return;
-    }
+  return [...document.querySelectorAll(".job-list")].find((jobList) => {
+    const rect = jobList.getBoundingClientRect();
+    return pointerX >= rect.left && pointerX <= rect.right && pointerY >= rect.top && pointerY <= rect.bottom;
+  }) || null;
+}
 
-    const application = applications.find((item) => item.id === applicationId);
-    if (!application) {
-      clearDropState();
-      return;
-    }
+async function handlePointerDragEnd() {
+  document.removeEventListener("pointermove", handlePointerDragMove);
+  document.removeEventListener("pointercancel", cancelPointerDrag);
 
-    try {
-      await moveApplication(applicationId, statusValue, nextApplicationId);
-    } catch (error) {
-      console.warn("Move failed", error);
-      renderApplications();
-    } finally {
-      clearDropState();
-    }
-  });
+  if (!dragState?.hasStarted) {
+    dragState = null;
+    return;
+  }
+
+  const applicationId = draggedApplicationId;
+  const targetList = dragPlaceholder?.closest(".job-list") || null;
+  const nextApplicationId = getNextApplicationId(dragPlaceholder);
+  const nextStatus = targetList?.dataset.status || "";
+
+  if (!applicationId || !nextStatus || !applications.some((item) => item.id === applicationId)) {
+    clearDropState();
+    return;
+  }
+
+  try {
+    await moveApplication(applicationId, nextStatus, nextApplicationId);
+  } catch (error) {
+    console.warn("Move failed", error);
+    renderApplications();
+  } finally {
+    clearDropState();
+  }
+}
+
+function cancelPointerDrag() {
+  document.removeEventListener("pointermove", handlePointerDragMove);
+  document.removeEventListener("pointerup", handlePointerDragEnd);
+  clearDropState();
 }
 
 function createDragPlaceholder(item) {
@@ -427,6 +534,15 @@ function getNextDropItem(jobList, pointerY) {
     const rect = item.getBoundingClientRect();
     return pointerY < rect.top + rect.height / 2;
   }) || null;
+}
+
+function scrollDuringPointerDrag(pointerX, pointerY) {
+  const targetList = getDropListAtPoint(pointerX, pointerY);
+  if (targetList) {
+    scrollJobListDuringDrag(targetList, pointerY);
+  }
+
+  scrollBoardDuringDrag(pointerX);
 }
 
 function scrollJobListDuringDrag(jobList, pointerY) {
@@ -448,6 +564,59 @@ function scrollJobListDuringDrag(jobList, pointerY) {
   }
 }
 
+function scrollBoardDuringDrag(pointerX) {
+  const rect = applicationsSection.getBoundingClientRect();
+  const edgeSize = 96;
+  const maxScrollStep = 28;
+
+  if (pointerX < rect.left + edgeSize) {
+    const distanceFromLeftEdge = Math.max(pointerX - rect.left, 0);
+    const scrollRatio = 1 - distanceFromLeftEdge / edgeSize;
+    applicationsSection.scrollLeft -= Math.ceil(scrollRatio * maxScrollStep);
+    return;
+  }
+
+  if (pointerX > rect.right - edgeSize) {
+    const distanceFromRightEdge = Math.max(rect.right - pointerX, 0);
+    const scrollRatio = 1 - distanceFromRightEdge / edgeSize;
+    applicationsSection.scrollLeft += Math.ceil(scrollRatio * maxScrollStep);
+  }
+}
+
+function animateListsReorder(jobLists, updateList) {
+  const movingElements = [...new Set(jobLists.flatMap((jobList) => {
+    return [...jobList.querySelectorAll(".job-item:not(.is-hidden-during-drag), .drag-placeholder")];
+  }))];
+  const previousRects = new Map(movingElements.map((element) => [element, element.getBoundingClientRect()]));
+
+  updateList();
+
+  for (const element of movingElements) {
+    const previousRect = previousRects.get(element);
+    if (!previousRect || !element.isConnected) {
+      continue;
+    }
+
+    const nextRect = element.getBoundingClientRect();
+    const deltaY = previousRect.top - nextRect.top;
+
+    if (!deltaY) {
+      continue;
+    }
+
+    element.animate(
+      [
+        { transform: `translate3d(0, ${deltaY}px, 0)` },
+        { transform: "translate3d(0, 0, 0)" }
+      ],
+      {
+        duration: 170,
+        easing: "cubic-bezier(0.2, 0, 0, 1)"
+      }
+    );
+  }
+}
+
 function getNextApplicationId(placeholder) {
   let nextElement = placeholder?.nextElementSibling || null;
 
@@ -460,8 +629,14 @@ function getNextApplicationId(placeholder) {
 
 function clearDropState() {
   draggedApplicationId = "";
+  cancelAnimationFrame(dragMoveFrame);
+  dragMoveFrame = 0;
+  pendingDragPoint = null;
+  dragState?.preview?.remove();
+  dragState = null;
   dragPlaceholder?.remove();
   dragPlaceholder = null;
+  document.body.classList.remove("is-board-dragging");
   document.querySelectorAll(".is-dragging, .is-hidden-during-drag").forEach((item) => {
     item.classList.remove("is-dragging");
     item.classList.remove("is-hidden-during-drag");
