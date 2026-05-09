@@ -87,6 +87,12 @@ select {
   box-shadow: var(--shadow-soft);
 }
 
+.backup-gate.is-warning {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  box-shadow: 0 10px 28px rgba(180, 83, 9, 0.12);
+}
+
 .backup-gate[hidden] {
   display: none;
 }
@@ -95,9 +101,18 @@ select {
   margin-bottom: 6px;
 }
 
+.backup-gate.is-warning h2 {
+  color: #92400e;
+}
+
 .backup-gate p {
   max-width: 720px;
   color: #475569;
+}
+
+.backup-gate.is-warning p {
+  color: #78350f;
+  font-weight: 700;
 }
 
 .backup-gate-actions {

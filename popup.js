@@ -70,15 +70,15 @@ form.addEventListener("submit", async (event) => {
   await saveApplications(applications);
 
   try {
-    const didWrite = await writeApplicationsBackup(applications);
+    const didWrite = await writeApplicationsBackup(applications, { requestPermission: true });
     if (!didWrite) {
-      throw new Error("Backup file not updated. Choose Backup File again.");
+      throw createBackupPermissionError();
     }
   } catch (error) {
     console.warn("Backup write failed", error);
     applications = applications.filter((item) => item.id !== application.id);
     await saveApplications(applications);
-    showSaveMessage(isMissingBackupFileError(error) ? MISSING_BACKUP_FILE_MESSAGE : "Backup file not updated. Choose Backup File again.");
+    await redirectToBackupSetup(isMissingBackupFileError(error) ? "backupMissing" : "backupPermission");
     return;
   }
 
@@ -90,17 +90,44 @@ form.addEventListener("submit", async (event) => {
 });
 
 openTrackerButton.addEventListener("click", () => {
-  chrome.tabs.create({
-    url: chrome.runtime.getURL("tracker.html")
-  });
+  openExtensionPage(chrome.runtime.getURL("tracker.html"));
 });
 
 async function redirectToBackupSetup(reason) {
-  showSaveMessage(reason === "restoreRequired" ? "Restore your backup before saving new jobs." : "Select a backup file before saving jobs.");
-  await chrome.tabs.create({
-    url: chrome.runtime.getURL(`tracker.html?setup=${reason}`)
+  await openBackupSetupPage(reason);
+
+  window.setTimeout(() => {
+    window.close();
+  }, 120);
+}
+
+async function openBackupSetupPage(reason) {
+  const setupUrl = chrome.runtime.getURL(`tracker.html?setup=${encodeURIComponent(reason)}`);
+  await openExtensionPage(setupUrl);
+}
+
+function openExtensionPage(url) {
+  return new Promise((resolve) => {
+    try {
+      if (!chrome.tabs?.create) {
+        window.open(url, "_blank");
+        resolve();
+        return;
+      }
+
+      chrome.tabs.create({ url }, () => {
+        if (chrome.runtime.lastError) {
+          window.open(url, "_blank");
+        }
+
+        resolve();
+      });
+    } catch (error) {
+      console.warn("Could not open extension page in a tab", error);
+      window.location.href = url;
+      resolve();
+    }
   });
-  window.close();
 }
 
 async function backupHasApplications() {
@@ -115,7 +142,7 @@ async function backupHasApplications() {
     }
 
     console.warn("Backup read failed", error);
-    await redirectToBackupSetup("backupRequired");
+    await redirectToBackupSetup(isBackupPermissionError(error) ? "backupPermission" : "backupRequired");
     return true;
   }
 }

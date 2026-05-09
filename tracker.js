@@ -6,6 +6,8 @@ const importButton = document.querySelector("#importBtn");
 const importMessage = document.querySelector("#importMessage");
 const backupLocationButton = document.querySelector("#backupLocationBtn");
 const backupGate = document.querySelector("#backupGate");
+const backupGateTitle = document.querySelector("#backupGateTitle");
+const backupGateMessage = document.querySelector("#backupGateMessage");
 const gateBackupButton = document.querySelector("#gateBackupBtn");
 const gateRestoreButton = document.querySelector("#gateRestoreBtn");
 const applicationsSection = document.querySelector(".applications-section");
@@ -120,6 +122,10 @@ async function updateBackupGate(handle) {
   const needsBackup = !backupHandle;
 
   backupGate.hidden = !needsBackup;
+  backupGate.classList.remove("is-warning");
+  backupGateTitle.textContent = "Connect a backup file to continue";
+  backupGateMessage.textContent = "JobNest needs a backup JSON file before you manage applications. If browser storage was cleared, restore your previous backup after connecting a backup file.";
+  gateBackupButton.textContent = "Choose Backup File";
   applicationsSection.classList.toggle("is-disabled", needsBackup);
   searchInput.disabled = needsBackup;
 }
@@ -128,10 +134,13 @@ function showBackupDisconnectedState(message) {
   backupLocationButton.textContent = "Choose Backup File";
   backupLocationButton.disabled = false;
   backupLocationButton.title = "Choose backup file";
+  backupGate.classList.add("is-warning");
   backupGate.hidden = false;
+  backupGateTitle.textContent = "Backup setup needed";
+  backupGateMessage.textContent = message;
+  gateBackupButton.textContent = "Choose Backup File";
   applicationsSection.classList.add("is-disabled");
   searchInput.disabled = true;
-  showImportMessage(message);
 }
 
 async function showBackupPermissionNeededState(message) {
@@ -142,7 +151,13 @@ async function showBackupPermissionNeededState(message) {
   backupLocationButton.title = backupHandle
     ? `Reconnect backup file: ${backupHandle.name}`
     : "Choose backup file";
-  showImportMessage(message);
+  backupGate.classList.add("is-warning");
+  backupGate.hidden = false;
+  backupGateTitle.textContent = backupHandle ? "Reconnect backup file" : "Backup setup needed";
+  backupGateMessage.textContent = message;
+  gateBackupButton.textContent = backupHandle ? "Reconnect Backup" : "Choose Backup File";
+  applicationsSection.classList.add("is-disabled");
+  searchInput.disabled = true;
 }
 
 function updateRestoreButtons() {
@@ -164,23 +179,39 @@ async function showSetupMessageFromUrl() {
   const backupHandle = await getBackupFileHandle();
   clearSetupMessageFromUrl();
 
-  if (setupReason === "restoreRequired") {
-    showImportMessage("Browser storage is empty, but your backup file has saved applications. Restore Backup before adding new jobs.");
+  if (setupReason === "backupPermission") {
+    await showBackupPermissionNeededState("JobNest cannot update your backup file until you reconnect it. Click Reconnect Backup to continue saving jobs.");
     return;
   }
 
-  if (backupHandle) {
+  if (setupReason === "restoreRequired") {
+    showBackupRestoreRequiredState();
     return;
   }
 
   if (setupReason === "backupMissing") {
-    showBackupDisconnectedState(MISSING_BACKUP_FILE_MESSAGE);
+    showBackupDisconnectedState("Your selected backup file was moved or deleted. Choose Backup File again before saving jobs.");
     return;
   }
 
   if (setupReason === "backupRequired") {
+    if (backupHandle) {
+      await showBackupPermissionNeededState("JobNest needs permission to update your backup file. Click Reconnect Backup to continue saving jobs.");
+      return;
+    }
+
     showBackupDisconnectedState("Choose a backup file before saving jobs from the popup.");
   }
+}
+
+function showBackupRestoreRequiredState() {
+  backupGate.classList.add("is-warning");
+  backupGate.hidden = false;
+  backupGateTitle.textContent = "Restore backup before saving";
+  backupGateMessage.textContent = "Browser storage is empty, but your backup file has saved applications. Restore Backup before adding new jobs.";
+  gateBackupButton.textContent = "Choose Backup File";
+  applicationsSection.classList.add("is-disabled");
+  searchInput.disabled = true;
 }
 
 function clearSetupMessageFromUrl() {
