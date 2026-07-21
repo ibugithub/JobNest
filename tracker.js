@@ -330,6 +330,18 @@ function renderApplications() {
     sectionList.dataset.status = status.value;
     section.querySelector("h3").textContent = status.label;
     section.querySelector(".status-count").textContent = String(sectionApplications.length);
+
+    if (status.value === "saved") {
+      const exportButton = section.querySelector(".export-saved-button");
+      const savedApplications = applications.filter((application) => getApplicationStatus(application) === "saved");
+
+      exportButton.hidden = false;
+      exportButton.disabled = savedApplications.length === 0;
+      exportButton.addEventListener("click", () => {
+        downloadSavedApplications(savedApplications);
+      });
+    }
+
     setupDropTarget(sectionList, status.value);
 
     if (sectionApplications.length === 0) {
@@ -345,6 +357,26 @@ function renderApplications() {
 
     sectionsList.append(section);
   }
+}
+
+function downloadSavedApplications(savedApplications) {
+  if (savedApplications.length === 0) {
+    return;
+  }
+
+  const blob = new Blob([JSON.stringify(savedApplications, null, 2)], {
+    type: "application/json"
+  });
+  const downloadUrl = URL.createObjectURL(blob);
+  const downloadLink = document.createElement("a");
+
+  downloadLink.href = downloadUrl;
+  downloadLink.download = `jobnest-saved-jobs-${todayDateString()}.json`;
+  document.body.append(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
+  showImportMessage(`${savedApplications.length} saved ${savedApplications.length === 1 ? "job" : "jobs"} downloaded.`);
 }
 
 function createApplicationItem(application) {

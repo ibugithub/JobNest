@@ -48,7 +48,16 @@
       <section class="status-section">
         <header class="status-header">
           <h3></h3>
-          <span class="status-count"></span>
+          <div class="status-header-actions">
+            <button class="export-saved-button" type="button" title="Download saved jobs as JSON" aria-label="Download saved jobs as JSON" hidden>
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12 3v12"></path>
+                <path d="m7 10 5 5 5-5"></path>
+                <path d="M5 21h14"></path>
+              </svg>
+            </button>
+            <span class="status-count"></span>
+          </div>
         </header>
         <div class="job-list"></div>
       </section>

@@ -373,6 +373,59 @@ textarea:focus {
   font-weight: 800;
 }
 
+.status-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.export-saved-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #c7d7fe;
+  border-radius: 7px;
+  background: #f8fbff;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.export-saved-button[hidden] {
+  display: none;
+}
+
+.export-saved-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.export-saved-button:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.export-saved-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.2);
+  outline-offset: 2px;
+}
+
+.export-saved-button:disabled {
+  border-color: var(--line);
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
 .status-count {
   display: inline-flex;
   align-items: center;
