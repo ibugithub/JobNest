@@ -13,6 +13,8 @@ const gateRestoreButton = document.querySelector("#gateRestoreBtn");
 const applicationsSection = document.querySelector(".applications-section");
 const sectionTemplate = document.querySelector("#statusSectionTemplate");
 const jobTemplate = document.querySelector("#jobItemTemplate");
+const editDialog = document.querySelector("#editDialog");
+const editForm = document.querySelector("#editForm");
 
 let applications = [];
 let draggedApplicationId = "";
@@ -52,6 +54,25 @@ importButton.addEventListener("click", () => {
 
 gateRestoreButton.addEventListener("click", () => {
   restoreApplicationsFromConnectedBackup();
+});
+
+editForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await saveEditedApplication();
+});
+
+editDialog.querySelector("[data-dialog-cancel]").addEventListener("click", () => {
+  editDialog.close();
+});
+
+editDialog.querySelector(".dialog-close-button").addEventListener("click", () => {
+  editDialog.close();
+});
+
+editDialog.addEventListener("click", (event) => {
+  if (event.target === editDialog) {
+    editDialog.close();
+  }
 });
 
 async function restoreApplicationsFromConnectedBackup() {
@@ -335,11 +356,15 @@ function createApplicationItem(application) {
   item.querySelector(".meta-line").textContent = buildMetaLine(application);
 
   const notesLine = item.querySelector(".notes-line");
-  notesLine.textContent = application.notes;
-  notesLine.hidden = !application.notes;
+  notesLine.textContent = "";
+  notesLine.hidden = true;
 
   item.addEventListener("pointerdown", (event) => {
     preparePointerDrag(event, item, application.id);
+  });
+
+  item.querySelector(".edit-button").addEventListener("click", () => {
+    openEditDialog(application.id);
   });
 
   const openLink = item.querySelector(".open-link");
@@ -365,6 +390,101 @@ function buildMetaLine(application) {
   ].filter(Boolean);
 
   return parts.join(" | ");
+}
+
+function openEditDialog(applicationId) {
+  const application = applications.find((item) => item.id === applicationId);
+  if (!application) {
+    return;
+  }
+
+  editForm.elements.id.value = application.id;
+  editForm.elements.company.value = application.company || "";
+  editForm.elements.role.value = application.role || "";
+  editForm.elements.url.value = application.url || "";
+  editForm.elements.location.value = application.location || "";
+  editForm.elements.status.value = getApplicationStatus(application);
+  editForm.elements.appliedDate.value = getStatusEventDate(application, getApplicationStatus(application)) || application.appliedDate || todayDateString();
+  editForm.elements.notes.value = application.notes || "";
+
+  editDialog.showModal();
+  editForm.elements.company.focus();
+}
+
+async function saveEditedApplication() {
+  const formData = new FormData(editForm);
+  const applicationId = clean(formData.get("id"));
+  const existingApplication = applications.find((application) => application.id === applicationId);
+
+  if (!existingApplication) {
+    editDialog.close();
+    return;
+  }
+
+  const nextStatus = normalizeStatus(formData.get("status"));
+  const nextStatusDate = clean(formData.get("appliedDate")) || todayDateString();
+  const previousStatus = getApplicationStatus(existingApplication);
+  const previousEvents = Array.isArray(existingApplication.events) ? existingApplication.events : [];
+  const nextEvents = previousStatus === nextStatus
+    ? updateCurrentStatusEventDate(previousEvents, nextStatus, nextStatusDate)
+    : buildEditedStatusEvents(previousEvents, nextStatus, nextStatusDate);
+
+  applications = applications.map((application) => {
+    if (application.id !== applicationId) {
+      return application;
+    }
+
+    return {
+      ...application,
+      company: clean(formData.get("company")),
+      role: clean(formData.get("role")),
+      url: clean(formData.get("url")),
+      location: clean(formData.get("location")),
+      status: nextStatus,
+      appliedDate: nextStatusDate,
+      notes: clean(formData.get("notes")),
+      updatedAt: new Date().toISOString(),
+      events: nextEvents
+    };
+  });
+
+  await saveApplications(applications);
+  updateRestoreButtons();
+  await writeBackupWithStatus("Application updated.");
+  editDialog.close();
+  renderApplications();
+}
+
+function updateCurrentStatusEventDate(events, status, date) {
+  const matchingEventIndex = findLastIndex(events, (event) => event.type === "status" && event.status === status);
+
+  if (matchingEventIndex < 0) {
+    return [...events, createStatusEvent(status, date)];
+  }
+
+  return events.map((event, index) => {
+    if (index === matchingEventIndex) {
+      return {
+        ...event,
+        date
+      };
+    }
+
+    return event;
+  });
+}
+
+function buildEditedStatusEvents(events, nextStatus, date) {
+  const nextStatusIndex = getStatusIndex(nextStatus);
+  const retainedEvents = events.filter((event) => {
+    const eventStatusIndex = getStatusIndex(event.status);
+    return event.type === "status" && eventStatusIndex >= 0 && eventStatusIndex < nextStatusIndex;
+  });
+
+  return [
+    ...retainedEvents,
+    createStatusEvent(nextStatus, date)
+  ];
 }
 
 function getApplicationStatus(application) {

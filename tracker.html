@@ -57,7 +57,15 @@
     <template id="jobItemTemplate">
       <article class="job-item">
         <div class="job-main">
-          <h4></h4>
+          <div class="job-title-row">
+            <h4></h4>
+            <button class="edit-button" type="button" title="Edit application" aria-label="Edit application">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12 20h9"></path>
+                <path d="m16.5 3.5 4 4L8 20H4v-4L16.5 3.5z"></path>
+              </svg>
+            </button>
+          </div>
           <p class="company-line"></p>
           <p class="meta-line"></p>
           <p class="notes-line"></p>
@@ -68,6 +76,66 @@
         </div>
       </article>
     </template>
+
+    <dialog id="editDialog" class="edit-dialog" aria-labelledby="editDialogTitle">
+      <form id="editForm" class="edit-form" method="dialog">
+        <header class="edit-dialog-header">
+          <h2 id="editDialogTitle">Edit application</h2>
+          <button class="dialog-close-button" type="button" aria-label="Close editor"></button>
+        </header>
+
+        <input id="editId" name="id" type="hidden">
+
+        <div class="edit-field-grid">
+          <label>
+            Company
+            <input id="editCompany" name="company" type="text" required>
+          </label>
+          <label>
+            Role
+            <input id="editRole" name="role" type="text" required>
+          </label>
+        </div>
+
+        <label>
+          Job URL
+          <input id="editUrl" name="url" type="url">
+        </label>
+
+        <div class="edit-field-grid">
+          <label>
+            Location
+            <input id="editLocation" name="location" type="text">
+          </label>
+          <label>
+            Status
+            <select id="editStatus" name="status">
+              <option value="saved">Saved</option>
+              <option value="applied">Applied</option>
+              <option value="screening">Screening</option>
+              <option value="interview">Interview</option>
+              <option value="offer">Offer</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Status date
+          <input id="editAppliedDate" name="appliedDate" type="date">
+        </label>
+
+        <label>
+          Notes
+          <textarea id="editNotes" name="notes" rows="6"></textarea>
+        </label>
+
+        <footer class="edit-dialog-actions">
+          <button class="secondary-button" type="button" data-dialog-cancel>Cancel</button>
+          <button class="primary-button" type="submit">Save changes</button>
+        </footer>
+      </form>
+    </dialog>
 
     <script src="storage.js"></script>
     <script src="tracker.js"></script>

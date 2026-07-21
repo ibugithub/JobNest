@@ -31,7 +31,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -146,26 +147,41 @@ h2 {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
-  height: 40px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: #ffffff;
   color: var(--text);
   outline: none;
-  padding: 0 12px;
   transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
+input,
+select {
+  height: 40px;
+  padding: 0 12px;
+}
+
+textarea {
+  min-height: 130px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 .secondary-button,
-.delete-button {
+.primary-button,
+.delete-button,
+.edit-button,
+.dialog-close-button {
   border: 0;
   cursor: pointer;
   font-weight: 700;
@@ -194,6 +210,19 @@ select:focus {
   background: #f8fafc;
   border-color: var(--line);
   box-shadow: none;
+}
+
+.primary-button {
+  height: 40px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #ffffff;
+  padding: 0 16px;
+}
+
+.primary-button:hover {
+  background: var(--accent-strong);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
 }
 
 .visually-hidden {
@@ -371,8 +400,10 @@ select:focus {
 
 .job-item {
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: start;
+  height: 126px;
   padding: 14px;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
@@ -433,6 +464,14 @@ select:focus {
 
 .job-main {
   min-width: 0;
+  overflow: hidden;
+}
+
+.job-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  align-items: start;
+  gap: 10px;
 }
 
 .job-main h4 {
@@ -457,6 +496,38 @@ select:focus {
 
 .notes-line {
   color: #475467;
+  display: -webkit-box;
+  max-height: calc(1.35em * 3);
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.edit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: var(--accent);
+}
+
+.edit-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.edit-button:hover {
+  background: var(--accent);
+  color: #ffffff;
 }
 
 .job-actions {
@@ -517,6 +588,95 @@ select:focus {
   display: none;
 }
 
+.edit-dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0;
+  overflow: auto;
+  background: #ffffff;
+  color: var(--text);
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.26);
+}
+
+.edit-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.edit-form {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.edit-dialog-header,
+.edit-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.edit-dialog-header {
+  padding-bottom: 4px;
+}
+
+.edit-dialog-header h2 {
+  font-size: 18px;
+}
+
+.dialog-close-button {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: #f1f5f9;
+}
+
+.dialog-close-button::before,
+.dialog-close-button::after {
+  position: absolute;
+  top: 16px;
+  left: 9px;
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: #475569;
+  content: "";
+}
+
+.dialog-close-button::before {
+  transform: rotate(45deg);
+}
+
+.dialog-close-button::after {
+  transform: rotate(-45deg);
+}
+
+.dialog-close-button:hover {
+  background: #e2e8f0;
+}
+
+.edit-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.edit-form label {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.edit-dialog-actions {
+  justify-content: end;
+  padding-top: 4px;
+}
+
 @media (max-width: 720px) {
   .page-header,
   .backup-gate,
@@ -540,5 +700,9 @@ select:focus {
 
   .backup-gate-actions {
     flex-direction: column;
+  }
+
+  .edit-field-grid {
+    grid-template-columns: 1fr;
   }
 }
