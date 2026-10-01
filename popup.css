@@ -129,6 +129,51 @@ form {
   gap: 8px;
 }
 
+.duplicate-notice {
+  margin-bottom: 10px;
+  padding: 10px 11px;
+  border: 1px solid #f3c66d;
+  border-radius: 6px;
+  background: #fffbeb;
+  color: #78350f;
+  font-size: 12px;
+}
+
+.duplicate-notice strong,
+.duplicate-notice p {
+  display: block;
+}
+
+.duplicate-notice p {
+  margin-top: 3px;
+  color: #92400e;
+}
+
+.duplicate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 7px;
+}
+
+.duplicate-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  background: #94a3b8;
+  box-shadow: none;
+  transform: none;
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

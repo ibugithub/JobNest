@@ -1,26 +1,56 @@
 const form = document.querySelector("#jobForm");
 const saveMessage = document.querySelector("#saveMessage");
 const openTrackerButton = document.querySelector("#openTrackerBtn");
+const duplicateNotice = document.querySelector("#duplicateNotice");
+const duplicateTitle = document.querySelector("#duplicateTitle");
+const duplicateDetails = document.querySelector("#duplicateDetails");
+const viewExistingButton = document.querySelector("#viewExistingBtn");
+const saveSeparateButton = document.querySelector("#saveSeparateBtn");
+const saveApplicationButton = document.querySelector("#saveApplicationBtn");
 
 let applications = [];
+let duplicateApplication = null;
+let allowPossibleDuplicate = false;
 
 document.addEventListener("DOMContentLoaded", async () => {
   setDefaultAppliedDate();
   applyDraft(await loadPopupDraft());
   await prefillFromActiveTab();
   applications = await loadApplications();
+  updateDuplicateNotice();
 });
 
 form.addEventListener("input", () => {
+  allowPossibleDuplicate = false;
   saveCurrentDraft();
+  updateDuplicateNotice();
 });
 
 form.addEventListener("change", () => {
+  allowPossibleDuplicate = false;
   saveCurrentDraft();
+  updateDuplicateNotice();
+});
+
+viewExistingButton.addEventListener("click", () => {
+  if (duplicateApplication) {
+    openExtensionPage(chrome.runtime.getURL(`tracker.html?application=${encodeURIComponent(duplicateApplication.id)}`));
+  }
+});
+
+saveSeparateButton.addEventListener("click", () => {
+  allowPossibleDuplicate = true;
+  updateDuplicateNotice();
 });
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+
+  const duplicate = findDuplicateApplication();
+  if (duplicate?.type === "exact" || (duplicate?.type === "possible" && !allowPossibleDuplicate)) {
+    updateDuplicateNotice();
+    return;
+  }
 
   try {
     if (!await verifyBackupFileStillExists()) {
@@ -211,4 +241,85 @@ function showSaveMessage(message) {
       window.close();
     }
   }, 900);
+}
+
+function findDuplicateApplication() {
+  const formData = new FormData(form);
+  const url = normalizeJobUrl(formData.get("url"));
+  const company = normalizeDuplicateText(formData.get("company"));
+  const role = normalizeDuplicateText(formData.get("role"));
+
+  if (url) {
+    const exactMatch = applications.find((application) => normalizeJobUrl(application.url) === url);
+    if (exactMatch) {
+      return { type: "exact", application: exactMatch };
+    }
+  }
+
+  if (company && role) {
+    const possibleMatch = applications.find((application) => (
+      normalizeDuplicateText(application.company) === company
+      && normalizeDuplicateText(application.role) === role
+    ));
+    if (possibleMatch) {
+      return { type: "possible", application: possibleMatch };
+    }
+  }
+
+  return null;
+}
+
+function updateDuplicateNotice() {
+  const duplicate = findDuplicateApplication();
+  duplicateApplication = duplicate?.application || null;
+
+  if (!duplicate || (duplicate.type === "possible" && allowPossibleDuplicate)) {
+    duplicateNotice.hidden = true;
+    saveApplicationButton.disabled = false;
+    return;
+  }
+
+  const application = duplicate.application;
+  const status = normalizeStatus(application.status);
+  const statusDate = getStatusEventDate(application, status);
+  duplicateNotice.hidden = false;
+  duplicateTitle.textContent = duplicate.type === "exact"
+    ? "This job is already tracked."
+    : "This may already be tracked.";
+  duplicateDetails.textContent = `${application.role} at ${application.company} · ${statusLabel(status)}${statusDate ? ` on ${statusDate}` : ""}`;
+  saveSeparateButton.hidden = duplicate.type === "exact";
+  saveApplicationButton.disabled = duplicate.type === "exact";
+}
+
+function normalizeJobUrl(value) {
+  const rawUrl = clean(value);
+  if (!rawUrl) {
+    return "";
+  }
+
+  try {
+    const url = new URL(rawUrl);
+    url.hash = "";
+    url.hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+    url.pathname = url.pathname.replace(/\/+$/, "") || "/";
+
+    const trackingParameters = ["fbclid", "gclid", "refId", "trackingId"];
+    [...url.searchParams.keys()].forEach((key) => {
+      if (key.toLowerCase().startsWith("utm_") || trackingParameters.some((item) => item.toLowerCase() === key.toLowerCase())) {
+        url.searchParams.delete(key);
+      }
+    });
+    url.searchParams.sort();
+    const port = url.port ? `:${url.port}` : "";
+    return `${url.hostname}${port}${url.pathname}${url.search}`;
+  } catch (error) {
+    return rawUrl.replace(/#.*$/, "").replace(/\/+$/, "");
+  }
+}
+
+function normalizeDuplicateText(value) {
+  return clean(value)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
 }

@@ -5,6 +5,7 @@ A browser extension to track job applications without paying for a hosted tracke
 
 - Save a job application from the extension popup.
 - Auto-fill the job URL from the active browser tab.
+- Block duplicate job URLs and warn about matching company and role entries.
 - Track company, role, location, status, date applied, notes, and source URL.
 - Keep a status event history for statistics.
 - Open a dedicated tracker page for saved applications.

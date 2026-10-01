@@ -25,6 +25,14 @@
           <h2 id="addJobTitle">Add application</h2>
           <span class="panel-pill">Quick save</span>
         </div>
+        <aside id="duplicateNotice" class="duplicate-notice" aria-live="polite" hidden>
+          <strong id="duplicateTitle"></strong>
+          <p id="duplicateDetails"></p>
+          <div class="duplicate-actions">
+            <button id="viewExistingBtn" class="duplicate-link" type="button">View existing application</button>
+            <button id="saveSeparateBtn" class="duplicate-link" type="button" hidden>Save as separate opening</button>
+          </div>
+        </aside>
         <form id="jobForm" autocomplete="off">
           <div class="field-grid">
             <label>
@@ -70,7 +78,7 @@
             <textarea id="notes" name="notes" rows="3" placeholder="Recruiter name, salary, next step..."></textarea>
           </label>
 
-          <button class="primary-button" type="submit">Save application</button>
+          <button id="saveApplicationBtn" class="primary-button" type="submit">Save application</button>
           <p id="saveMessage" class="save-message" aria-live="polite"></p>
         </form>
       </section>

@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await showSetupMessageFromUrl();
   applyCompanyFilterFromUrl();
   renderApplications();
+  openApplicationFromUrl();
 });
 
 searchInput.addEventListener("input", renderApplications);
@@ -253,6 +254,18 @@ function applyCompanyFilterFromUrl() {
   const url = new URL(window.location.href);
   url.searchParams.delete("company");
   window.history.replaceState({}, "", url);
+}
+
+function openApplicationFromUrl() {
+  const url = new URL(window.location.href);
+  const applicationId = url.searchParams.get("application");
+  if (!applicationId || !applications.some((application) => application.id === applicationId)) {
+    return;
+  }
+
+  url.searchParams.delete("application");
+  window.history.replaceState({}, "", url);
+  openEditDialog(applicationId);
 }
 
 function showImportMessage(message) {
